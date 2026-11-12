@@ -86,9 +86,16 @@
             android:clipChildren="false"
             android:gravity="bottom"
             android:orientation="horizontal"
+            android:clipToPadding="false"
             android:paddingHorizontal="8dp">
 
-            <LinearLayout style="@style/DockCell">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <app.stickme.kids.StickerButton
                     android:id="@+id/showCamera"
@@ -110,10 +117,19 @@
 
                 <TextView
                     style="@style/DockLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="camera" />
             </LinearLayout>
 
-            <LinearLayout style="@style/DockCell">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <app.stickme.kids.StickerButton
                     android:id="@+id/pickFace"
@@ -134,10 +150,19 @@
 
                 <TextView
                     style="@style/DockLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="face" />
             </LinearLayout>
 
-            <LinearLayout style="@style/DockCell">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <app.stickme.kids.StickerButton
                     android:id="@+id/record"
@@ -159,10 +184,19 @@
                 <TextView
                     android:id="@+id/recordLabel"
                     style="@style/DockLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="record" />
             </LinearLayout>
 
-            <LinearLayout style="@style/DockCell">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <app.stickme.kids.StickerButton
                     android:id="@+id/changeLook"
@@ -184,10 +218,19 @@
 
                 <TextView
                     style="@style/DockLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="look" />
             </LinearLayout>
 
-            <LinearLayout style="@style/DockCell">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <app.stickme.kids.StickerButton
                     android:id="@+id/playGame"
@@ -209,6 +252,9 @@
 
                 <TextView
                     style="@style/DockLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:text="games" />
             </LinearLayout>
         </LinearLayout>

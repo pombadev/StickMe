@@ -17,13 +17,19 @@ import android.widget.TextView
 private fun View.dpf(value: Float) = value * resources.displayMetrics.density
 private fun View.dpi(value: Float) = (value * resources.displayMetrics.density).toInt()
 
-private fun View.fade(show: Boolean) {
+/** Fades a panel in or out, and calls [changed] once it is really open or really closed. */
+private fun View.fade(show: Boolean, changed: (() -> Unit)? = null) {
     if (show) {
         alpha = 0f
         visibility = View.VISIBLE
         animate().alpha(1f).setDuration(180).start()
+        changed?.invoke()
     } else {
-        animate().alpha(0f).setDuration(140).withEndAction { visibility = View.GONE; alpha = 1f }.start()
+        animate().alpha(0f).setDuration(140).withEndAction {
+            visibility = View.GONE
+            alpha = 1f
+            changed?.invoke()
+        }.start()
     }
 }
 
@@ -64,7 +70,7 @@ class GamesSheet(private val sheet: View, private val onPick: (GameKind) -> Unit
                 text = kind.label
                 typeface = Fonts.hand
                 setTextColor(Paper.INK)
-                textSize = 19f
+                textSize = 18f
                 gravity = Gravity.CENTER
                 maxLines = 1
                 includeFontPadding = false
@@ -80,9 +86,9 @@ class GamesSheet(private val sheet: View, private val onPick: (GameKind) -> Unit
                         text = "2 players"
                         typeface = Fonts.hand
                         setTextColor(Color.WHITE)
-                        textSize = 13f
+                        textSize = 11.5f
                         gravity = Gravity.CENTER
-                        setLineSpacing(0f, 0.9f)
+                        setLineSpacing(0f, 0.85f)
                         includeFontPadding = false
                     }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                 }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.TOP or Gravity.END).apply {
@@ -98,8 +104,11 @@ class GamesSheet(private val sheet: View, private val onPick: (GameKind) -> Unit
         }
     }
 
-    fun show() = sheet.fade(true)
-    fun hide() { if (isShown) sheet.fade(false) }
+    /** Called when the sheet opens or closes. */
+    var onChange: (() -> Unit)? = null
+
+    fun show() = sheet.fade(true, onChange)
+    fun hide() { if (isShown) sheet.fade(false, onChange) }
 
     private fun iconFor(kind: GameKind) = when (kind) {
         GameKind.COPY_ME -> R.drawable.ic_game_copy_me
@@ -216,13 +225,16 @@ class LooksSheet(
     private fun dpi(v: Float) = sheet.dpi(v)
     private fun dpf(v: Float) = sheet.dpf(v)
 
+    /** Called when the sheet opens or closes. */
+    var onChange: (() -> Unit)? = null
+
     fun show() {
         showLook()
         highlightFace()
-        sheet.fade(true)
+        sheet.fade(true, onChange)
     }
 
-    fun hide() { if (isShown) sheet.fade(false) }
+    fun hide() { if (isShown) sheet.fade(false, onChange) }
 }
 
 /** The grown-ups folder: tracking quality, sound, and the promise that nothing leaves the phone. */
@@ -275,8 +287,11 @@ class SettingsFolder(
         note.text = "Fast suits most phones. Detailed follows fingers and faces better but can feel slower.$now"
     }
 
-    fun show() = folder.fade(true)
-    fun hide() { if (isShown) folder.fade(false) }
+    /** Called when the folder opens or closes. */
+    var onChange: (() -> Unit)? = null
+
+    fun show() = folder.fade(true, onChange)
+    fun hide() { if (isShown) folder.fade(false, onChange) }
 }
 
 /** The results screen: a prize ribbon with the score, and what to do next. */
@@ -310,10 +325,13 @@ class ResultsScreen(
                 else -> ""
             }
         }
-        if (!isShown) screen.fade(true)
+        if (!isShown) screen.fade(true, onChange)
     }
 
-    fun hide() { if (isShown) screen.fade(false) }
+    /** Called when the results open or close. */
+    var onChange: (() -> Unit)? = null
+
+    fun hide() { if (isShown) screen.fade(false, onChange) }
 }
 
 /**

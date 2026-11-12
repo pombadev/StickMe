@@ -302,6 +302,7 @@
             android:layout_marginBottom="26dp"
             android:layout_marginHorizontal="14dp"
             android:layout_marginTop="84dp"
+            android:clipChildren="false"
             android:rotation="1">
 
             <TextView
@@ -311,6 +312,7 @@
                 android:layout_gravity="top|start"
                 android:layout_marginTop="-34dp"
                 android:background="@drawable/manila_tab"
+                android:elevation="11dp"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="16dp"
                 android:text="For grown-ups"
@@ -391,6 +393,8 @@
                         <LinearLayout
                             android:id="@+id/optFast"
                             style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:contentDescription="Fast tracking">
 
                             <app.stickme.kids.CheckSquareView
@@ -400,12 +404,17 @@
 
                             <TextView
                                 style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
                                 android:text="Fast" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:id="@+id/optDetailed"
                             style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:contentDescription="Detailed tracking">
 
                             <app.stickme.kids.CheckSquareView
@@ -415,6 +424,9 @@
 
                             <TextView
                                 style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
                                 android:text="Detailed" />
                         </LinearLayout>
 
@@ -435,6 +447,8 @@
                         <LinearLayout
                             android:id="@+id/optSound"
                             style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:contentDescription="Sounds and music">
 
                             <app.stickme.kids.CheckSquareView
@@ -444,6 +458,9 @@
 
                             <TextView
                                 style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
                                 android:text="Sounds and music" />
                         </LinearLayout>
 

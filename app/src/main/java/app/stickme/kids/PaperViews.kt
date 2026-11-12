@@ -55,7 +55,7 @@ class StickerButton @JvmOverloads constructor(context: Context, attrs: Attribute
         setWillNotDraw(false)
         clipChildren = false
         clipToPadding = false
-        elevation = dp(6f)
+        if (elevation == 0f) elevation = dp(6f) // unless the layout chose one
         context.obtainStyledAttributes(attrs, R.styleable.StickerButton).use { a ->
             stickerColor = a.getColor(R.styleable.StickerButton_stickerColor, stickerColor)
             borderColor = a.getColor(R.styleable.StickerButton_stickerBorder, borderColor)
@@ -737,7 +737,7 @@ class PaperCard @JvmOverloads constructor(context: Context, attrs: AttributeSet?
     init {
         setWillNotDraw(false)
         clipChildren = false
-        elevation = dp(8f)
+        if (elevation == 0f) elevation = dp(8f) // unless the layout chose one
         context.obtainStyledAttributes(attrs, R.styleable.PaperCard).use { a ->
             lineSpacing = a.getDimension(R.styleable.PaperCard_lineSpacing, 0f)
             paperColor = a.getColor(R.styleable.PaperCard_paperColor, paperColor)

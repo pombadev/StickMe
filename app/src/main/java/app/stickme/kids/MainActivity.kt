@@ -227,6 +227,10 @@ class MainActivity : ComponentActivity() {
             },
         )
 
+        for (sheet in listOf<(() -> Unit) -> Unit>(
+            { gamesSheet.onChange = it }, { looksSheet.onChange = it }, { settingsFolder.onChange = it }, { results.onChange = it },
+        )) sheet { refreshNotes() }
+
         findViewById<View>(R.id.showCamera).setOnClickListener {
             cameraVisible = !cameraVisible
             cameraPicture.animate().alpha(if (cameraVisible) CAMERA_ALPHA else 0f).setDuration(250).start()
@@ -369,16 +373,20 @@ class MainActivity : ComponentActivity() {
             val people = smoother.smooth(currentEngine.findPeople(upright))
             val now = SystemClock.uptimeMillis()
             val extras = funEngine.update(people, now, upright.width, upright.height, visibleRegion(upright.width, upright.height))
-            val frame = SceneFrame(people, upright, upright.width, upright.height, mirrored, extras)
-            skeletons.show(frame)
-            if (videoRecorder.isRecording) {
-                val pictureAlpha = if (cameraVisible) (CAMERA_ALPHA * 255).toInt() else 0
-                videoRecorder.drawFrame { canvas ->
-                    videoPainter.drawScene(canvas, videoRecorder.width, videoRecorder.height, frame, pictureAlpha)
-                }
-            }
-            updateChrome(people.size, extras.game, now)
+            present(SceneFrame(people, upright, upright.width, upright.height, mirrored, extras), now)
         }
+    }
+
+    /** Shows one analysed frame: on screen, in the video if recording, and in the chrome around it. */
+    internal fun present(frame: SceneFrame, now: Long = SystemClock.uptimeMillis()) {
+        skeletons.show(frame)
+        if (videoRecorder.isRecording) {
+            val pictureAlpha = if (cameraVisible) (CAMERA_ALPHA * 255).toInt() else 0
+            videoRecorder.drawFrame { canvas ->
+                videoPainter.drawScene(canvas, videoRecorder.width, videoRecorder.height, frame, pictureAlpha)
+            }
+        }
+        updateChrome(frame.people.size, frame.extras.game, now)
     }
 
     /** The part of the camera picture that shows on screen (the picture is cropped to fill the screen), in picture pixels. */
@@ -409,12 +417,7 @@ class MainActivity : ComponentActivity() {
             shownPeople = friends
             shownTip = tip
             shownNobody = nobodyHere
-            runOnUiThread {
-                friendsText.visibility = if (friends > 0) View.VISIBLE else View.GONE
-                friendsText.text = if (friends == 1) "1 friend here!" else "$friends friends here!"
-                tipNote.visibility = if (tip) View.VISIBLE else View.GONE
-                nobody.visibility = if (nobodyHere) View.VISIBLE else View.GONE
-            }
+            runOnUiThread { refreshNotes() }
         }
 
         val key = listOf(game?.mode, game?.canSkip, game?.hint, game?.result)
@@ -431,6 +434,16 @@ class MainActivity : ComponentActivity() {
             lastReportAt = now
             runOnUiThread { settingsFolder.setSpeed(fps) }
         }
+    }
+
+    /** The notes on the board (who is here, the tip, "where are you?") hide while a sheet covers the board. */
+    private fun refreshNotes() {
+        val covered = gamesSheet.isShown || looksSheet.isShown || settingsFolder.isShown || results.isShown
+        val friends = shownPeople
+        friendsText.visibility = if (friends > 0 && !covered) View.VISIBLE else View.GONE
+        friendsText.text = if (friends == 1) "1 friend here!" else "$friends friends here!"
+        tipNote.visibility = if (shownTip && !covered) View.VISIBLE else View.GONE
+        nobody.visibility = if (shownNobody && !covered) View.VISIBLE else View.GONE
     }
 
     /** Swaps the dock for the game controls (and back), and shows the results screen. */
