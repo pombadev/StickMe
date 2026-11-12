@@ -141,6 +141,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         sounds.muted = prefs.getBoolean(PREF_MUTED, false)
+        requestedOrientation = savedTurn().androidValue
         funEngine.games.onChanged = { playing ->
             runOnUiThread {
                 if (playing != null) looksSheet.hide()
@@ -216,8 +217,12 @@ class MainActivity : ComponentActivity() {
                 prefs.edit().putBoolean(PREF_MUTED, !on).apply()
                 updateBackgroundMusic()
             },
+            onTurn = { mode ->
+                prefs.edit().putString(PREF_TURN, mode.name).apply()
+                requestedOrientation = mode.androidValue
+            },
         )
-        settingsFolder.set(engine?.model ?: savedModel(), !sounds.muted)
+        settingsFolder.set(engine?.model ?: savedModel(), !sounds.muted, savedTurn())
         results = ResultsScreen(
             findViewById(R.id.resultsScreen),
             onPlayAgain = { kind -> funEngine.games.requestStart(kind) },
@@ -302,6 +307,9 @@ class MainActivity : ComponentActivity() {
     }
 
     // ---- the pose model ------------------------------------------------------------------------
+
+    private fun savedTurn(): TurnMode =
+        TurnMode.entries.firstOrNull { it.name == prefs.getString(PREF_TURN, null) } ?: TurnMode.FOLLOW
 
     private fun savedModel(): PoseModel =
         PoseModel.entries.firstOrNull { it.name == prefs.getString(PREF_MODEL, null) } ?: PoseModel.TINY
@@ -603,6 +611,7 @@ class MainActivity : ComponentActivity() {
         const val CAMERA_ALPHA = 0.6f
         const val PREF_MODEL = "pose_model"
         const val PREF_MUTED = "sound_muted"
+        const val PREF_TURN = "screen_turn"
         const val NOBODY_DELAY_MS = 1500L
         const val TIP_MS = 12_000L
     }

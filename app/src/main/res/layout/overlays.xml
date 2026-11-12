@@ -464,6 +464,81 @@
                                 android:text="Sounds and music" />
                         </LinearLayout>
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:layout_marginVertical="22dp"
+                            android:background="@drawable/dashed_divider"
+                            android:layerType="software" />
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Screen"
+                            android:textColor="@color/ink"
+                            android:textSize="22sp" />
+
+                        <LinearLayout
+                            android:id="@+id/optTurnFollow"
+                            style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Follow the device">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkTurnFollow"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="Follow the phone" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/optTurnPortrait"
+                            style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Lock to portrait">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkTurnPortrait"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="Stay upright" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/optTurnLandscape"
+                            style="@style/Option"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Lock to landscape">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkTurnLandscape"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="Stay sideways" />
+                        </LinearLayout>
+
                         <TextView
                             style="@style/Heading"
                             android:layout_width="wrap_content"

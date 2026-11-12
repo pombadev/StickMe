@@ -237,12 +237,26 @@ class LooksSheet(
     fun hide() { if (isShown) sheet.fade(false, onChange) }
 }
 
-/** The grown-ups folder: tracking quality, sound, and the promise that nothing leaves the phone. */
+/** How the screen turns: with the phone (the default), or held upright or sideways. */
+enum class TurnMode(val androidValue: Int) {
+    FOLLOW(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR),
+    PORTRAIT(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT),
+    LANDSCAPE(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE),
+}
+
+/** The grown-ups folder: tracking quality, sound, how the screen turns, and the promise that nothing leaves the phone. */
 class SettingsFolder(
     private val folder: View,
     private val onModel: (PoseModel) -> Unit,
     private val onSound: (Boolean) -> Unit,
+    private val onTurn: (TurnMode) -> Unit,
 ) {
+    private val turnChecks = mapOf(
+        TurnMode.FOLLOW to folder.findViewById<CheckSquareView>(R.id.checkTurnFollow),
+        TurnMode.PORTRAIT to folder.findViewById<CheckSquareView>(R.id.checkTurnPortrait),
+        TurnMode.LANDSCAPE to folder.findViewById<CheckSquareView>(R.id.checkTurnLandscape),
+    )
+
     private val fast: CheckSquareView = folder.findViewById(R.id.checkFast)
     private val detailed: CheckSquareView = folder.findViewById(R.id.checkDetailed)
     private val sound: CheckSquareView = folder.findViewById(R.id.checkSound)
@@ -256,6 +270,9 @@ class SettingsFolder(
         folder.findViewById<View>(R.id.settingsClose).setOnClickListener { hide() }
         folder.findViewById<View>(R.id.optFast).setOnClickListener { pick(PoseModel.TINY) }
         folder.findViewById<View>(R.id.optDetailed).setOnClickListener { pick(PoseModel.MEDIUM) }
+        folder.findViewById<View>(R.id.optTurnFollow).setOnClickListener { pickTurn(TurnMode.FOLLOW) }
+        folder.findViewById<View>(R.id.optTurnPortrait).setOnClickListener { pickTurn(TurnMode.PORTRAIT) }
+        folder.findViewById<View>(R.id.optTurnLandscape).setOnClickListener { pickTurn(TurnMode.LANDSCAPE) }
         folder.findViewById<View>(R.id.optSound).setOnClickListener {
             soundOn = !soundOn
             sound.checked = soundOn
@@ -269,7 +286,15 @@ class SettingsFolder(
         onModel(model)
     }
 
-    fun set(model: PoseModel, soundOn: Boolean) {
+    private fun pickTurn(mode: TurnMode) {
+        showTurn(mode)
+        onTurn(mode)
+    }
+
+    private fun showTurn(mode: TurnMode) = turnChecks.forEach { (m, check) -> check.checked = m == mode }
+
+    fun set(model: PoseModel, soundOn: Boolean, turn: TurnMode) {
+        showTurn(turn)
         fast.checked = model == PoseModel.TINY
         detailed.checked = model == PoseModel.MEDIUM
         this.soundOn = soundOn
