@@ -647,11 +647,11 @@ class CrayonBoxView @JvmOverloads constructor(context: Context, attrs: Attribute
         words.typeface = Fonts.heading
         words.textSize = 42f
         words.color = Paper.RED
-        canvas.drawText("LOOKS", 30f, 354f, words)
+        canvas.drawText("LOOKS", 30f, 340f, words)
         words.typeface = Fonts.hand
         words.textSize = 19f
         words.color = Color.parseColor("#2B2118")
-        canvas.drawText("pull out a crayon", 30f, 378f, words)
+        canvas.drawText("pull out a crayon", 30f, 364f, words)
         words.textAlign = Paint.Align.CENTER
         canvas.restore()
     }

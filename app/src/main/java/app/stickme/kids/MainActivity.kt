@@ -444,8 +444,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var gameOn = false
+
+    /** The dock, logo and corner stickers belong to the play screen: the crayon sheet and games replace them. */
+    private fun applyChrome() {
+        val hidden = gameOn || looksSheet.isShown
+        val visibility = if (hidden) View.GONE else View.VISIBLE
+        dock.visibility = visibility
+        cornerButtons.visibility = visibility
+        logo.visibility = visibility
+    }
+
     /** The notes on the board (who is here, the tip, "where are you?") hide while a sheet covers the board. */
     private fun refreshNotes() {
+        applyChrome()
         val covered = gamesSheet.isShown || looksSheet.isShown || settingsFolder.isShown || results.isShown
         val friends = shownPeople
         friendsText.visibility = if (friends > 0 && !covered) View.VISIBLE else View.GONE
@@ -458,9 +470,8 @@ class MainActivity : ComponentActivity() {
     private fun showGameState(game: GameScene?) {
         val mode = game?.mode
         val playing = game != null
-        dock.visibility = if (playing) View.GONE else View.VISIBLE
-        cornerButtons.visibility = if (playing) View.GONE else View.VISIBLE
-        logo.visibility = if (playing) View.GONE else View.VISIBLE
+        gameOn = playing
+        applyChrome()
         gameControls.visibility = if (playing && mode != SceneMode.RESULT) View.VISIBLE else View.GONE
         val inPlay = mode == SceneMode.PLAY
         stopGame.visibility = if (inPlay) View.VISIBLE else View.GONE

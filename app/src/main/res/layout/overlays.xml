@@ -144,7 +144,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="52dp"
                     android:layout_gravity="bottom|end"
-                    android:layout_marginBottom="30dp"
+                    android:layout_marginBottom="44dp"
                     android:layout_marginEnd="30dp"
                     android:contentDescription="Done"
                     android:rotation="-3"
