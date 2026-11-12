@@ -17,7 +17,8 @@ class GamesTest {
 
     private val sounds = SoundBoard().apply { muted = true }
     private val settings = SceneSettings()
-    private val fx = FunEngine(settings, GameKit(sounds, random = Random(3)))
+    private val said = mutableListOf<String>()
+    private val fx = FunEngine(settings, GameKit(sounds, random = Random(3), speak = { said += it }))
     private var now = 10_000L
 
     @After
@@ -187,6 +188,57 @@ class GamesTest {
             picture.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
         assertTrue(snapshot.ribbons.isNotEmpty())
+    }
+
+    @Test
+    fun mirrorMeScoresSamePosesHighAndDifferentPosesLow() {
+        val armsUp = pose(9 to (215f to 60f), 10 to (265f to 60f))
+        assertTrue(MirrorMe.similarity(Body(standing()), Body(standing())) >= 95)
+        assertTrue(MirrorMe.similarity(Body(armsUp), Body(armsUp)) >= 95)
+        assertTrue(MirrorMe.similarity(Body(armsUp), Body(standing())) < 50)
+    }
+
+    @Test
+    fun mirrorMeGivesTwoPerfectCopiersEveryStar() {
+        val game = start<MirrorMe>(GameKind.MIRROR)
+        while (fx.games.isRunning && game.score < 18) {
+            step(standing(id = 1, shift = -110f), standing(id = 2, shift = 110f))
+        }
+        assertEquals(18, game.score) // 6 rounds x 3 stars
+    }
+
+    private fun poseFor(target: PoseTarget): Person = when (target) {
+        PoseTarget.HANDS_UP -> pose(9 to (215f to 60f), 10 to (265f to 60f))
+        PoseTarget.STAR -> pose(9 to (120f to 110f), 10 to (360f to 110f), 15 to (170f to 520f), 16 to (310f to 520f))
+        PoseTarget.AIRPLANE -> pose(7 to (130f to 192f), 8 to (350f to 192f), 9 to (60f to 195f), 10 to (420f to 195f))
+        PoseTarget.FLAMINGO -> pose(14 to (285f to 380f), 16 to (264f to 440f))
+        PoseTarget.HANDS_ON_HEAD -> pose(9 to (225f to 150f), 10 to (255f to 150f))
+        PoseTarget.TOUCH_TOES -> pose(9 to (220f to 460f), 10 to (260f to 460f))
+        PoseTarget.SUPERHERO -> pose(9 to (215f to 60f))
+    }
+
+    @Test
+    fun simonSaysRewardsOnlyDoingWhatSimonSays() {
+        val game = start<SimonSays>(GameKind.SIMON)
+        var finalScore = 0
+        while (fx.games.isRunning) {
+            val obey = game.isSimonSaying && !game.isCheering
+            step(if (obey) poseFor(game.currentCommand) else standing())
+            finalScore = game.score
+        }
+        assertEquals(10, finalScore)
+        assertEquals(3, game.hearts)
+        assertTrue("the phone should speak", said.any { it.startsWith("Simon says, ") })
+        assertTrue("there should be trick rounds", said.any { !it.startsWith("Simon says") })
+    }
+
+    @Test
+    fun simonSaysTakesAHeartWhenYouFallForATrick() {
+        val game = start<SimonSays>(GameKind.SIMON)
+        while (fx.games.isRunning && game.hearts == 3) {
+            step(if (game.isCheering) standing() else poseFor(game.currentCommand))
+        }
+        assertEquals(2, game.hearts)
     }
 
     /** Saves a picture of every game in the middle of play, for a person to look at. */

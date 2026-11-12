@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.util.Size
 import android.util.TypedValue
@@ -32,6 +33,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -58,7 +60,27 @@ class MainActivity : ComponentActivity() {
     private val videoPainter = ScenePainter(settings)
     private val ticker = Handler(Looper.getMainLooper())
     private val sounds = SoundBoard()
-    private val funEngine = FunEngine(settings, GameKit(sounds, SavedScores())) // camera thread only
+    private val funEngine = FunEngine(settings, GameKit(sounds, SavedScores(), speak = ::speak)) // camera thread only
+
+    /** The phone's voice, for Simon Says. Null until the speech engine is ready. */
+    @Volatile private var voice: TextToSpeech? = null
+
+    private fun startVoice() {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(applicationContext) { status ->
+            val ready = engine ?: return@TextToSpeech
+            if (status != TextToSpeech.SUCCESS) return@TextToSpeech
+            // Simon's words are English; use the phone's English voice when it has one.
+            val english = ready.isLanguageAvailable(Locale.US) >= TextToSpeech.LANG_AVAILABLE
+            if (english) ready.language = Locale.US
+            voice = ready
+        }
+    }
+
+    private fun speak(words: String) {
+        if (sounds.muted) return
+        voice?.speak(words, TextToSpeech.QUEUE_FLUSH, null, "simon")
+    }
 
     /** Best scores, kept between app launches. */
     private inner class SavedScores : ScoreBook {
@@ -138,6 +160,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         buildGameMenu()
+        startVoice()
         funEngine.games.onChanged = { playing ->
             runOnUiThread {
                 playGame.text = if (playing != null) "⏹" else "🎯"
@@ -462,6 +485,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         getSystemService(DisplayManager::class.java).unregisterDisplayListener(displayListener)
+        voice?.shutdown()
+        voice = null
         worker.execute {
             engine?.close()
             sounds.close()

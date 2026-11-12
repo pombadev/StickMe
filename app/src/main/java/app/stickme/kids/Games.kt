@@ -16,6 +16,8 @@ enum class GameKind(val emoji: String, val label: String) {
     JUMPS("🦘", "Jumps"),
     METEORS("☄️", "Meteors"),
     LIMBO("🎋", "Limbo"),
+    MIRROR("🪞", "Mirror me"),
+    SIMON("🗣️", "Simon says"),
     PAINT("🖌️", "Air paint"),
     WORKOUT("🏋️", "Workout"),
     BALLET("🩰", "Ballet class"),
@@ -253,6 +255,8 @@ class GameHost(private val kit: GameKit) {
         GameKind.JUMPS -> JumpChallenge(kit)
         GameKind.METEORS -> Meteors(kit)
         GameKind.LIMBO -> Limbo(kit)
+        GameKind.MIRROR -> MirrorMe(kit)
+        GameKind.SIMON -> SimonSays(kit)
         GameKind.PAINT -> AirPainting(kit)
         GameKind.WORKOUT -> Workout(kit)
         GameKind.BALLET -> BalletClass(kit)
