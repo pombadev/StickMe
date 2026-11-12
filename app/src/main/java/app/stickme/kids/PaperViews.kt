@@ -803,3 +803,18 @@ class FontSpan(private val face: android.graphics.Typeface) : android.text.style
     override fun updateDrawState(paint: android.text.TextPaint) { paint.typeface = face }
     override fun updateMeasureState(paint: android.text.TextPaint) { paint.typeface = face }
 }
+
+/** A thin dashed ink line, like the divider between sections on a form. */
+class DashedLineView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(77, 34, 32, 28)
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        line.strokeWidth = dp(2f)
+        line.pathEffect = android.graphics.DashPathEffect(floatArrayOf(dp(8f), dp(6f)), 0f)
+        canvas.drawLine(0f, height / 2f, width.toFloat(), height / 2f, line)
+    }
+}
