@@ -442,7 +442,7 @@ class ChalkArtView @JvmOverloads constructor(context: Context, attrs: AttributeS
         canvas.drawRoundRect(-4f, -34f, 8f, -24f, 3f, 3f, fill)
         canvas.restore()
         canvas.restore()
-        chalk(canvas, "M40 700c90-6 220-8 310 0", Paper.CHALK, 3f, 75)
+        chalk(canvas, "M40 752c90-6 220-8 310 0", Paper.CHALK, 3f, 75)
         RansomText.draw(canvas, "Stick Me!", 195f, 176f, 50f)
         text(canvas, "drawing you a friend...", 195f, 660f, 34f, Paper.CHALK, -2f)
         text(canvas, "getting the camera ready", 195f, 700f, 19f, Paper.CHALK_DIM)

@@ -141,7 +141,7 @@ class FunEngine(private val settings: SceneSettings, kit: GameKit) {
         for (body in bodies) {
             val tracker = trackers.getOrPut(body.person.id) { MoveTracker() }
             tracker.lastSeen = now
-            if (!games.isRunning) reactToMoves(body, tracker, now)
+            if (!games.isStartingOrRunning) reactToMoves(body, tracker, now)
             if (settings.look == Look.SPARKLE) leaveSparkles(body, tracker, now) else tracker.trailPoints.clear()
         }
         trackers.values.removeAll { now - it.lastSeen > 2000 }

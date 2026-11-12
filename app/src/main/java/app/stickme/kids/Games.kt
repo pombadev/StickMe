@@ -250,6 +250,9 @@ class GameHost(private val kit: GameKit) {
 
     val isRunning get() = current != null
 
+    /** True from the moment a game is asked for, so nothing else reacts to the frame it starts on. */
+    val isStartingOrRunning get() = current != null || requested != null
+
     /** Called on the camera thread with the game that started, or null when it ended. */
     var onChanged: ((GameKind?) -> Unit)? = null
 

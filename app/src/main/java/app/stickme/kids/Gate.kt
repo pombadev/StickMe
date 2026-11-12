@@ -178,17 +178,17 @@ class GameGate(
             val x = if (body.ok(0)) body.x(0) else (body.x(5) + body.x(6)) / 2
             val sx = c.fit.x(x)
             val sy = c.fit.y(head)
-            val reach = body.unit * c.fit.scale * 1.5f
+            val reach = body.unit * c.fit.scale * 0.85f
             val isChosen = body.person.id == chosen
             if (isChosen) {
                 // The yellow line: a half circle over their head that fills as they keep their hands up.
-                arc.set(sx - reach, sy - reach - reach * 0.2f, sx + reach, sy + reach - reach * 0.2f)
+                arc.set(sx - reach, sy - reach, sx + reach, sy + reach) // centred on the head, like the design
                 chalk.strokeWidth = 9f * u
                 chalk.color = Color.argb(60, 255, 226, 122)
                 canvas.drawArc(arc, 180f, 180f, false, chalk)
                 chalk.color = Paper.YELLOW
                 canvas.drawArc(arc, 180f, 180f * progress, false, chalk)
-                drawCrown(canvas, sx, arc.top - 6f * u, body.unit * c.fit.scale * 0.8f)
+                drawCrown(canvas, sx - reach * 0.55f, arc.top + reach * 0.35f, body.unit * c.fit.scale * 0.5f)
                 c.tools.drawCaption(c, "you're playing!", x, footY(body), 22f * u, Paper.INK, -4f, sticker = true)
             } else if (chosen != null) {
                 c.tools.drawCaption(c, "watching", x, footY(body), 21f * u, Paper.CHALK_DIM, 3f)
