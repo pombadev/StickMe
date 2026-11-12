@@ -30,7 +30,7 @@ class JumpChallenge(kit: GameKit) : MiniGame(kit, GameKind.JUMPS) {
             }
         }
         counters = t.bodies.mapNotNull { body ->
-            val (x, y) = body.aboveHead(0.7f) ?: return@mapNotNull null
+            val (x, y) = body.onTummy() ?: return@mapNotNull null
             Counter(x, y, jumps[body.person.id] ?: 0, 0.6f * body.unit)
         }
         return t.now - playStart < GAME_MS

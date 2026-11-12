@@ -74,6 +74,77 @@ class GamesTest {
     }
 
     @Test
+    fun meteorsTakeAHeartWhenTheyHitAndCountTheOnesThatMiss() {
+        val game = start<Meteors>(GameKind.METEORS)
+        // Stand under the lowest meteor: it must hit.
+        while (game.hearts == 3) {
+            val target = game.meteorsNow().maxByOrNull { it.y(now) }
+            step(standing(shift = (target?.x(now) ?: 240f) - 240f))
+        }
+        assertEquals(2, game.hearts)
+        // Then stand still for a while: meteors that miss count as dodged.
+        repeat(80) { step(standing(shift = -200f)) }
+        assertTrue("dodged ${game.score}", game.score > 0)
+    }
+
+    @Test
+    fun limboEndsWhenSomeoneStandsTallUnderTheBar() {
+        val game = start<Limbo>(GameKind.LIMBO)
+        repeat(80) { step(standing()) }
+        assertEquals(0, game.score)
+        assertEquals("You did it!", step(standing()).game?.card?.title)
+    }
+
+    @Test
+    fun limboCountsLevelsWhileYouStayLowEnough() {
+        val game = start<Limbo>(GameKind.LIMBO)
+        repeat(3) { step(standing()) } // the game measures how tall everyone stands
+        // Crouch 120 px: low enough for levels 1 and 2 (bar 45 and 85 px below the standing head), not level 3.
+        repeat(250) { step(standing(lift = -120f)) }
+        assertEquals(2, game.score)
+    }
+
+    @Test
+    fun airPaintingDrawsWithARaisedFingerAndClapClears() {
+        val game = start<AirPainting>(GameKind.PAINT)
+        for (i in 0 until 10) step(pose(Body.RIGHT_INDEX_TIP to (300f + i * 8f to 200f), Body.RIGHT_WRIST to (290f + i * 8f to 230f)))
+        assertTrue("painted ${game.paintedPoints}", game.paintedPoints >= 8)
+        repeat(3) { step(pose(Body.LEFT_WRIST to (150f to 250f), Body.RIGHT_WRIST to (330f to 250f))) }
+        step(pose(Body.LEFT_WRIST to (235f to 250f), Body.RIGHT_WRIST to (245f to 250f)))
+        assertEquals(0, game.paintedPoints)
+    }
+
+    /** Saves a picture of every game in the middle of play, for a person to look at. */
+    @Test
+    fun drawsEveryGameForAPersonToLookAt() {
+        val folder = java.io.File(
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null),
+            "games",
+        ).apply { mkdirs() }
+        for (kind in GameKind.entries) {
+            fx.games.requestStart(kind)
+            var person = standing()
+            var snapshot = step(person)
+            repeat(30 + 45) { i ->
+                person = when (kind) {
+                    GameKind.PAINT -> pose(Body.RIGHT_INDEX_TIP to (300f + (i % 20) * 6f to 180f + (i % 7) * 10f))
+                    GameKind.LIMBO -> if (i < 40) standing() else standing(lift = -120f)
+                    else -> standing(shift = if (i % 2 == 0) 0f else 30f)
+                }
+                snapshot = step(person)
+            }
+            val picture = android.graphics.Bitmap.createBitmap(720, 1280, android.graphics.Bitmap.Config.ARGB_8888)
+            val frame = SceneFrame(listOf(person), null, 480, 640, mirrored = false, extras = snapshot)
+            ScenePainter(SceneSettings()).drawScene(android.graphics.Canvas(picture), 720, 1280, frame, 0, now)
+            java.io.File(folder, "${kind.ordinal}_${kind.name}.png").outputStream().use {
+                picture.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+            }
+            fx.games.requestStop()
+            step(standing())
+        }
+    }
+
+    @Test
     fun stoppingAGameEndsItRightAway() {
         start<JumpChallenge>(GameKind.JUMPS)
         fx.games.requestStop()

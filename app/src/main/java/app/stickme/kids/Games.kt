@@ -14,6 +14,9 @@ enum class GameKind(val emoji: String, val label: String) {
     BUBBLES("🫧", "Bubbles"),
     FREEZE("🧊", "Freeze dance"),
     JUMPS("🦘", "Jumps"),
+    METEORS("☄️", "Meteors"),
+    LIMBO("🎋", "Limbo"),
+    PAINT("🖌️", "Air paint"),
 }
 
 /** Remembers each game's best score. */
@@ -246,6 +249,9 @@ class GameHost(private val kit: GameKit) {
         GameKind.BUBBLES -> BubblePop(kit)
         GameKind.FREEZE -> FreezeDance(kit)
         GameKind.JUMPS -> JumpChallenge(kit)
+        GameKind.METEORS -> Meteors(kit)
+        GameKind.LIMBO -> Limbo(kit)
+        GameKind.PAINT -> AirPainting(kit)
     }
 }
 

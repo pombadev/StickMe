@@ -86,6 +86,15 @@ class MovementMeter {
     }
 }
 
+/**
+ * Where to put a number on someone's tummy, like a shirt number, in image coordinates (text baseline).
+ * Unlike a spot above the head, this never runs into the game card at the top of the screen.
+ */
+fun Body.onTummy(): Pair<Float, Float>? {
+    if (!ok(5, 6, 11, 12)) return null
+    return (x(5) + x(6) + x(11) + x(12)) / 4 to (y(5) + y(6) + 3 * (y(11) + y(12))) / 8 + 0.15f * unit
+}
+
 /** Where to put a label above someone's head, in image coordinates. */
 fun Body.aboveHead(lift: Float = 0.6f): Pair<Float, Float>? {
     val head = headY ?: return null
