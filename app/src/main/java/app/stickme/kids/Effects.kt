@@ -87,6 +87,7 @@ class FunSnapshot(
     val pops: List<TextPop>,
     val echoes: List<List<Person>>,
     val game: GameScene?,
+    val ribbons: List<Ribbon> = emptyList(),
 ) {
     fun isAnimating(now: Long) = game != null || particles.any { it.isAlive(now) } || pops.any { it.isAlive(now) }
 
@@ -109,6 +110,7 @@ class FunEngine(private val settings: SceneSettings, kit: GameKit) {
     private val particles = ArrayList<Particle>()
     private val pops = ArrayList<TextPop>()
     private val echoes = ArrayDeque<List<Person>>()
+    private val ribbons = RibbonTrails()
     private val trackers = HashMap<Int, MoveTracker>()
     private val random = Random.Default
 
@@ -146,7 +148,8 @@ class FunEngine(private val settings: SceneSettings, kit: GameKit) {
         val game = games.update(Tick(bodies, now, elapsed, this, imageWidth, imageHeight))
 
         if (particles.size > MAX_PARTICLES) particles.subList(0, particles.size - MAX_PARTICLES).clear()
-        return FunSnapshot(particles.toList(), pops.toList(), echoes.toList(), game)
+        if (settings.look == Look.BALLERINA) ribbons.update(bodies) else ribbons.clear()
+        return FunSnapshot(particles.toList(), pops.toList(), echoes.toList(), game, ribbons.snapshot())
     }
 
     private fun reactToMoves(body: Body, tracker: MoveTracker, now: Long) {

@@ -123,6 +123,7 @@ class MainActivity : ComponentActivity() {
             settings.look = Look.entries[(settings.look.ordinal + 1) % Look.entries.size]
             skeletons.invalidate()
             showToast(LOOK_NAMES.getValue(settings.look))
+            updateBackgroundMusic()
         }
 
         val playGame = findViewById<TextView>(R.id.playGame)
@@ -146,6 +147,7 @@ class MainActivity : ComponentActivity() {
                     hide(settingsPanel)
                     hide(gameMenu)
                 }
+                updateBackgroundMusic()
             }
         }
 
@@ -173,6 +175,7 @@ class MainActivity : ComponentActivity() {
             prefs.edit().putBoolean(PREF_MUTED, sounds.muted).apply()
             showSound()
             showForAWhile(settingsPanel)
+            updateBackgroundMusic()
         }
 
         val switchModel = findViewById<TextView>(R.id.switchModel)
@@ -439,9 +442,21 @@ class MainActivity : ComponentActivity() {
         view.visibility = View.GONE
     }
 
+    override fun onResume() {
+        super.onResume()
+        updateBackgroundMusic()
+    }
+
     override fun onPause() {
         super.onPause()
         if (videoRecorder.isRecording) stopRecording()
+        sounds.stopLoop()
+    }
+
+    /** The music box plays with the ballerina look; games pick their own music, so leave it to them. */
+    private fun updateBackgroundMusic() {
+        if (funEngine.games.isRunning) return
+        if (settings.look == Look.BALLERINA) sounds.startLoop(Sound.MUSIC_BOX_LOOP) else sounds.stopLoop()
     }
 
     override fun onDestroy() {
@@ -474,6 +489,7 @@ class MainActivity : ComponentActivity() {
             Look.RAINBOW to "🌈 Rainbow",
             Look.SPARKLE to "✨ Sparkles — wave your hands!",
             Look.ECHO to "👻 Echo — dance!",
+            Look.BALLERINA to "🩰 Ballerina — twirl and wave!",
         )
     }
 }

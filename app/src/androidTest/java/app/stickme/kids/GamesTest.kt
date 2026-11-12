@@ -16,7 +16,8 @@ import kotlin.random.Random
 class GamesTest {
 
     private val sounds = SoundBoard().apply { muted = true }
-    private val fx = FunEngine(SceneSettings(), GameKit(sounds, random = Random(3)))
+    private val settings = SceneSettings()
+    private val fx = FunEngine(settings, GameKit(sounds, random = Random(3)))
     private var now = 10_000L
 
     @After
@@ -112,6 +113,80 @@ class GamesTest {
         repeat(3) { step(pose(Body.LEFT_WRIST to (150f to 250f), Body.RIGHT_WRIST to (330f to 250f))) }
         step(pose(Body.LEFT_WRIST to (235f to 250f), Body.RIGHT_WRIST to (245f to 250f)))
         assertEquals(0, game.paintedPoints)
+    }
+
+    @Test
+    fun workoutCountsJumpingJacksThenSquats() {
+        val game = start<Workout>(GameKind.WORKOUT)
+        assertEquals(Exercise.JUMPING_JACKS, game.currentExercise)
+        val open = pose(9 to (190f to 100f), 10 to (290f to 100f), 15 to (150f to 520f), 16 to (330f to 520f))
+        repeat(5) {
+            step(open)
+            step(standing())
+        }
+        assertEquals(5, game.score)
+
+        while (game.currentExercise == Exercise.JUMPING_JACKS || game.isResting) step(standing())
+        assertEquals(Exercise.SQUATS, game.currentExercise)
+        val squat = pose(11 to (220f to 390f), 12 to (260f to 390f))
+        repeat(4) {
+            step(squat)
+            step(standing())
+        }
+        assertEquals(9, game.score)
+    }
+
+    private fun balletPose(pose: BalletPose): Person = when (pose) {
+        BalletPose.CROWN -> pose(9 to (235f to 90f), 10 to (250f to 90f))
+        BalletPose.WINGS -> pose(9 to (60f to 200f), 10 to (420f to 200f))
+        BalletPose.PLIE -> pose(11 to (220f to 360f), 12 to (260f to 360f), 13 to (170f to 410f), 14 to (310f to 410f))
+        BalletPose.ARABESQUE -> pose(16 to (380f to 400f))
+    }
+
+    @Test
+    fun everyBalletPoseIsRecognisedAndStandingIsNot() {
+        for (pose in BalletPose.entries) {
+            assertTrue("$pose not recognised", pose.matches(Body(balletPose(pose))))
+            assertFalse("standing counted as $pose", pose.matches(Body(standing())))
+        }
+    }
+
+    @Test
+    fun balletClassGivesThreeStarsForAPerfectlyStillHoldAndOneForATwirl() {
+        val game = start<BalletClass>(GameKind.BALLET)
+        val asked = BalletPose.entries.first { it.title == step(standing()).game!!.card!!.title }
+        repeat(25) { step(balletPose(asked)) }
+        assertEquals(3, game.score)
+
+        // TestPoses' standing figure has its left shoulder (5) on the picture's left, which is how
+        // a person looks from behind. Swapping the shoulders makes them face the camera.
+        val facingCamera = pose(5 to (270f to 190f), 6 to (210f to 190f))
+        repeat(3) { step(facingCamera) }
+        repeat(3) { step(standing()) } // turned around
+        step(facingCamera)
+        assertEquals("a twirl earns a bonus star", 4, game.score)
+    }
+
+    @Test
+    fun drawsTheBallerinaLookForAPersonToLookAt() {
+        settings.look = Look.BALLERINA
+        var snapshot = step(standing())
+        var dancer = standing()
+        for (i in 0 until 12) {
+            dancer = pose(9 to (150f + i * 6f to 120f + i * 12f), 10 to (330f - i * 8f to 140f + i * 6f))
+            snapshot = step(dancer)
+        }
+        val folder = java.io.File(
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null),
+            "games",
+        ).apply { mkdirs() }
+        val picture = android.graphics.Bitmap.createBitmap(720, 1280, android.graphics.Bitmap.Config.ARGB_8888)
+        val frame = SceneFrame(listOf(dancer), null, 480, 640, mirrored = false, extras = snapshot)
+        ScenePainter(settings).drawScene(android.graphics.Canvas(picture), 720, 1280, frame, 0, now)
+        java.io.File(folder, "ballerina.png").outputStream().use {
+            picture.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+        assertTrue(snapshot.ribbons.isNotEmpty())
     }
 
     /** Saves a picture of every game in the middle of play, for a person to look at. */

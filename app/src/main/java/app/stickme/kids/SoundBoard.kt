@@ -42,9 +42,14 @@ class SoundBoard : AutoCloseable {
         }
     }
 
-    /** Plays [sound] over and over until [stopLoop]; replaces any other loop. */
+    /** The music loop playing now, if any. */
+    @Volatile var playingLoop: Sound? = null
+        private set
+
+    /** Plays [sound] over and over until [stopLoop]; replaces any other loop, and keeps going if it's already this one. */
     @Synchronized
     fun startLoop(sound: Sound) {
+        if (playingLoop == sound) return
         stopLoop()
         if (muted) return
         val track = tracks[sound] ?: return
@@ -53,6 +58,7 @@ class SoundBoard : AutoCloseable {
             track.setLoopPoints(0, lengths.getValue(sound), -1)
             track.play()
             loop = track
+            playingLoop = sound
         } catch (e: IllegalStateException) {
             Log.w("SoundBoard", "Could not loop $sound", e)
         }
@@ -62,6 +68,7 @@ class SoundBoard : AutoCloseable {
     fun stopLoop() {
         val playing = loop ?: return
         loop = null
+        playingLoop = null
         try {
             playing.stop()
         } catch (e: IllegalStateException) {

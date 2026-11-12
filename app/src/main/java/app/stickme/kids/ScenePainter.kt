@@ -8,7 +8,7 @@ import android.graphics.Paint
 import android.os.SystemClock
 
 /** Colour styles the 🎨 button cycles through. */
-enum class Look { NEON, RAINBOW, SPARKLE, ECHO }
+enum class Look { NEON, RAINBOW, SPARKLE, ECHO, BALLERINA }
 
 /** Choices the kid makes with the buttons, read by the screen, the video recorder and the effects. */
 class SceneSettings {
@@ -48,6 +48,7 @@ class ScenePainter(private val settings: SceneSettings) {
     private val pictureMatrix = Matrix()
     private val effects = EffectsPainter()
     private val gameTools = GameTools(effects)
+    private val ballerina = BallerinaPainter()
 
     /** Full scene for a video frame: black, then the camera picture at [pictureAlpha] (0 hides it), then the rest. */
     fun drawScene(
@@ -89,6 +90,7 @@ class ScenePainter(private val settings: SceneSettings) {
                 when (look) {
                     Look.RAINBOW -> Color.HSVToColor(floatArrayOf((personHue + bone.from * 3) % 360, 0.85f, 1f))
                     Look.NEON, Look.SPARKLE, Look.ECHO -> Skeleton.neonColor(bone)
+                    Look.BALLERINA -> Color.HSVToColor(floatArrayOf(290f + (bone.from * 7) % 60, 0.45f, 1f))
                 }
             }
 
@@ -99,9 +101,12 @@ class ScenePainter(private val settings: SceneSettings) {
                 canvas.drawCircle(fit.x(person.points[k * 2]), fit.y(person.points[k * 2 + 1]), radius, dot)
             }
 
+            if (look == Look.BALLERINA) ballerina.drawTutu(canvas, person, fit)
             if (face != null) FaceDrawing.draw(canvas, faceStyle, face)
+            if (look == Look.BALLERINA) ballerina.drawTiara(canvas, person, fit)
         }
 
+        if (look == Look.BALLERINA) ballerina.drawRibbons(canvas, frame.extras.ribbons, fit)
         effects.drawParticles(canvas, fit, frame.extras.particles, now)
         effects.drawPops(canvas, fit, frame.extras.pops, now)
         gameCanvas?.let { game?.drawFront(it) }
