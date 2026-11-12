@@ -1,4 +1,4 @@
-package app.wireframe.kids
+package app.stickme.kids
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -170,7 +170,7 @@ class MainActivity : ComponentActivity() {
         if (hasPermission(Manifest.permission.CAMERA)) startCamera() else askForCamera.launch(Manifest.permission.CAMERA)
     }
 
-    private val prefs by lazy { getSharedPreferences("wireframe", MODE_PRIVATE) }
+    private val prefs by lazy { getSharedPreferences("stickme", MODE_PRIVATE) }
 
     private fun savedModel(): PoseModel =
         PoseModel.entries.firstOrNull { it.name == prefs.getString(PREF_MODEL, null) } ?: PoseModel.TINY
@@ -404,7 +404,7 @@ class MainActivity : ComponentActivity() {
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     private companion object {
-        const val TAG = "Wireframe"
+        const val TAG = "StickMe"
         const val CAMERA_ALPHA = 0.6f
         const val PREF_MODEL = "pose_model"
         const val PREF_MUTED = "sound_muted"

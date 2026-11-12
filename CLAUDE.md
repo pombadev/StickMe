@@ -1,4 +1,4 @@
-# Wireframe
+# Stick Me!
 
 ## Working rules
 

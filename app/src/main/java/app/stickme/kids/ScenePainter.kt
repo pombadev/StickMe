@@ -1,4 +1,4 @@
-package app.wireframe.kids
+package app.stickme.kids
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

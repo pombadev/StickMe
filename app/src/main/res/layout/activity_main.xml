@@ -13,7 +13,7 @@
         app:implementationMode="compatible"
         app:scaleType="fillCenter" />
 
-    <app.wireframe.kids.SkeletonView
+    <app.stickme.kids.SkeletonView
         android:id="@+id/skeletons"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

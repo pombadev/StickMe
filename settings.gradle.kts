@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Wireframe"
+rootProject.name = "StickMe"
 include(":app")

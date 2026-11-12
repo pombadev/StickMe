@@ -1,4 +1,4 @@
-package app.wireframe.kids
+package app.stickme.kids
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment

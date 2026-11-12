@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "app.wireframe.kids"
+    namespace = "app.stickme.kids"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.wireframe.kids"
+        applicationId = "app.stickme.kids"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

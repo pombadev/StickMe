@@ -1,4 +1,4 @@
-package app.wireframe.kids
+package app.stickme.kids
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

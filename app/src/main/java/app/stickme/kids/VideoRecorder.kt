@@ -1,4 +1,4 @@
-package app.wireframe.kids
+package app.stickme.kids
 
 import android.content.ContentValues
 import android.content.Context
@@ -24,7 +24,7 @@ sealed class RecordingResult {
 
 /**
  * Records the frames we draw ourselves (not the raw camera), so the video shows exactly what the kid sees:
- * stick figures, faces and, if switched on, the camera picture. Finished videos go to Movies/Wireframe.
+ * stick figures, faces and, if switched on, the camera picture. Finished videos go to Movies/StickMe.
  */
 class VideoRecorder(private val context: Context) {
 
@@ -127,13 +127,13 @@ class VideoRecorder(private val context: Context) {
     }
 
     private fun copyToGallery(video: File): Uri {
-        val name = "Wireframe_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".mp4"
+        val name = "StickMe_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".mp4"
         if (Build.VERSION.SDK_INT >= 29) {
             val resolver = context.contentResolver
             val details = ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, name)
                 put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/Wireframe")
+                put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/StickMe")
                 put(MediaStore.Video.Media.IS_PENDING, 1)
             }
             val uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, details)
@@ -149,7 +149,7 @@ class VideoRecorder(private val context: Context) {
         }
 
         @Suppress("DEPRECATION")
-        val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Wireframe")
+        val folder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "StickMe")
         folder.mkdirs()
         val target = File(folder, name)
         video.copyTo(target)
