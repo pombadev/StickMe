@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Wireframe</string>
+    <string name="need_camera">Wireframe needs the camera to turn people into glowing stick figures.</string>
+    <string name="loading">Waking up the stick figures…</string>
+</resources>
