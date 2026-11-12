@@ -83,15 +83,15 @@ class GamesSheet(private val sheet: View, private val onPick: (GameKind) -> Unit
                     borderColor = Color.WHITE
                     rotation = 12f
                     addView(TextView(context).apply {
-                        text = "2 players"
+                        text = "2\nplayers"
                         typeface = Fonts.hand
                         setTextColor(Color.WHITE)
-                        textSize = 11.5f
+                        textSize = 10.5f
                         gravity = Gravity.CENTER
                         setLineSpacing(0f, 0.85f)
                         includeFontPadding = false
                     }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-                }, FrameLayout.LayoutParams(dpi(44f), dpi(44f), Gravity.TOP or Gravity.END).apply {
+                }, FrameLayout.LayoutParams(dpi(50f), dpi(50f), Gravity.TOP or Gravity.END).apply {
                     topMargin = -dpi(12f)
                     marginEnd = -dpi(10f)
                 })

@@ -65,8 +65,8 @@ class GameTools(val effects: EffectsPainter) {
         y += 34f * u
         val subtitleY = y + 16f * u
         if (info.subtitle.isNotEmpty()) y += 24f * u
-        val timerY = y + 20f * u
-        if (info.timeLeft != null) y += 36f * u
+        val timerY = y + 32f * u
+        if (info.timeLeft != null) y += 48f * u
         val checksHeight = info.checks?.let { 22f * u + it.size * 30f * u } ?: 0f
         val bottom = max(y + 12f * u, top + checksHeight)
         val right = left + width

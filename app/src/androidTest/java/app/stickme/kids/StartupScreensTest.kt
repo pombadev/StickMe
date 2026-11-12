@@ -81,4 +81,31 @@ class StartupScreensTest {
         assertEquals(SceneMode.PICK, scene.game?.mode)
         draw("E_hands_up", scene, listOf(watcher, raised))
     }
+
+    /** Draws the real results layout at phone size. */
+    private fun drawResults(name: String, info: ResultInfo, width: Int = 780, height: Int = 1688) {
+        Fonts.init(context)
+        val themed = android.view.ContextThemeWrapper(context, R.style.Theme_StickMe)
+        val host = android.widget.FrameLayout(themed)
+        android.view.LayoutInflater.from(themed).inflate(R.layout.overlays, host, true)
+        val screen = host.findViewById<View>(R.id.resultsScreen)
+        host.findViewById<View>(R.id.wakeScreen).visibility = View.GONE
+        ResultsScreen(screen, {}, {}).show(info)
+        screen.animate().cancel()
+        screen.alpha = 1f
+        screen.visibility = View.VISIBLE
+        host.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+        host.layout(0, 0, width, height)
+        val picture = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        host.draw(Canvas(picture))
+        save(name, picture)
+    }
+
+    @Test
+    fun drawsTheResultsScreens() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            drawResults("R_new_best", ResultInfo(GameKind.FREEZE, 12, "freezes", newBest = true, previousBest = 9))
+            drawResults("R_not_best", ResultInfo(GameKind.JUMPS, 7, "jumps", newBest = false, previousBest = 15))
+        }
+    }
 }

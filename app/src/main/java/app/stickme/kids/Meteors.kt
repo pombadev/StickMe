@@ -82,7 +82,7 @@ class Meteors(kit: GameKit) : MiniGame(kit, GameKind.METEORS) {
         val falling = meteors.toList()
         val card = Card(
             "Meteors",
-            corner = "❤️".repeat(hearts.coerceAtLeast(0)),
+            subtitle = "❤️".repeat(hearts.coerceAtLeast(0)),
             tally = score, unit = scoreUnit,
             timeLeft = (1 - (now - playStart).toFloat() / GAME_MS).coerceIn(0f, 1f),
             highlight = now < safeUntil,
