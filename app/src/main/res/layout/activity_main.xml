@@ -18,21 +18,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Only shown when there is something to say: loading, or nobody in the picture. -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="76dp"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/status"
+            android:id="@+id/hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/loading"
             android:textColor="#CCFFFFFF"
-            android:textSize="16sp" />
+            android:textSize="17sp" />
 
         <TextView
             android:id="@+id/recordingBadge"
@@ -48,53 +49,62 @@
             android:visibility="gone" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/playGame"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="60dp"
-        android:background="@drawable/recording_badge"
-        android:backgroundTint="#CC7C4DFF"
-        android:contentDescription="Play the Copy me pose game"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="10dp"
-        android:text="🎯 Copy me!"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/toggleSound"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="12dp"
-        android:background="@drawable/recording_badge"
-        android:backgroundTint="#55FFFFFF"
-        android:contentDescription="Turn sounds on or off"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        android:text="🔊 Sound"
-        android:textColor="@android:color/white"
-        android:textSize="14sp" />
+        android:gravity="end"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/switchModel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="12dp"
-        android:background="@drawable/recording_badge"
-        android:backgroundTint="#55FFFFFF"
-        android:contentDescription="Switch between the fast and the detailed model"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        android:textColor="@android:color/white"
-        android:textSize="14sp" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/flipCamera"
+                style="@style/SmallButton"
+                android:contentDescription="Switch between front and back camera"
+                android:text="🔄" />
+
+            <TextView
+                android:id="@+id/openSettings"
+                style="@style/SmallButton"
+                android:contentDescription="Settings for grown-ups"
+                android:text="⚙️" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/settingsPanel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/recording_badge"
+            android:backgroundTint="#E6222222"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/switchModel"
+                style="@style/SettingsRow"
+                android:contentDescription="Switch between the fast and the detailed model" />
+
+            <TextView
+                android:id="@+id/toggleSound"
+                style="@style/SettingsRow"
+                android:contentDescription="Turn sounds on or off" />
+
+            <TextView
+                android:id="@+id/speedInfo"
+                style="@style/SettingsRow"
+                android:clickable="false"
+                android:textColor="#99FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -156,10 +166,10 @@
                 android:text="🎨" />
 
             <TextView
-                android:id="@+id/flipCamera"
+                android:id="@+id/playGame"
                 style="@style/BigButton"
-                android:contentDescription="Switch between front and back camera"
-                android:text="🔄" />
+                android:contentDescription="Play the Copy me pose game"
+                android:text="🎯" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

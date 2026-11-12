@@ -39,7 +39,9 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var cameraPicture: PreviewView
     private lateinit var skeletons: SkeletonView
-    private lateinit var status: TextView
+    private lateinit var hint: TextView
+    private lateinit var settingsPanel: View
+    private lateinit var speedInfo: TextView
     private lateinit var recordingBadge: TextView
     private lateinit var recordButton: View
     private lateinit var facePicker: HorizontalScrollView
@@ -63,9 +65,12 @@ class MainActivity : ComponentActivity() {
 
     private var framesSinceReport = 0
     private var lastReportAt = SystemClock.elapsedRealtime()
+    private var lastPersonSeenAt = SystemClock.elapsedRealtime()
+    private var hintShown = false // camera thread; false makes the next frame replace the "waking up" text
+    private val autoClosers = HashMap<View, Runnable>()
 
     private val askForCamera = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startCamera() else status.setText(R.string.need_camera)
+        if (granted) startCamera() else hint.setText(R.string.need_camera)
     }
 
     private val askForRecordingPermissions =
@@ -86,11 +91,13 @@ class MainActivity : ComponentActivity() {
 
         cameraPicture = findViewById(R.id.cameraPicture)
         skeletons = findViewById(R.id.skeletons)
-        status = findViewById(R.id.status)
+        hint = findViewById(R.id.hint)
         recordingBadge = findViewById(R.id.recordingBadge)
         recordButton = findViewById(R.id.record)
         facePicker = findViewById(R.id.facePicker)
         faceOptions = findViewById(R.id.faceOptions)
+        settingsPanel = findViewById(R.id.settingsPanel)
+        speedInfo = findViewById(R.id.speedInfo)
         skeletons.settings = settings
 
         findViewById<TextView>(R.id.showCamera).setOnClickListener {
@@ -100,7 +107,7 @@ class MainActivity : ComponentActivity() {
         findViewById<TextView>(R.id.changeLook).setOnClickListener {
             settings.look = Look.entries[(settings.look.ordinal + 1) % Look.entries.size]
             skeletons.invalidate()
-            showHint(LOOK_NAMES.getValue(settings.look))
+            showToast(LOOK_NAMES.getValue(settings.look))
         }
 
         val playGame = findViewById<TextView>(R.id.playGame)
@@ -108,29 +115,41 @@ class MainActivity : ComponentActivity() {
             if (funEngine.game.isRunning) funEngine.game.requestStop() else funEngine.game.requestStart()
         }
         funEngine.game.onRunningChanged = { running ->
-            runOnUiThread { playGame.text = if (running) "⏹ Stop game" else "🎯 Copy me!" }
+            runOnUiThread {
+                playGame.text = if (running) "⏹" else "🎯"
+                playGame.contentDescription = if (running) "Stop the game" else "Play the Copy me pose game"
+                if (running) {
+                    hide(facePicker)
+                    hide(settingsPanel)
+                }
+            }
         }
 
+        findViewById<TextView>(R.id.flipCamera).setOnClickListener {
+            useFrontCamera = !useFrontCamera
+            startCamera()
+        }
+        findViewById<TextView>(R.id.pickFace).setOnClickListener {
+            if (facePicker.visibility == View.VISIBLE) hide(facePicker) else showForAWhile(facePicker)
+        }
+        findViewById<TextView>(R.id.openSettings).setOnClickListener {
+            if (settingsPanel.visibility == View.VISIBLE) hide(settingsPanel) else showForAWhile(settingsPanel)
+        }
+        recordButton.setOnClickListener {
+            if (videoRecorder.isRecording) stopRecording() else startRecordingAfterAsking()
+        }
+        buildFacePicker()
+
         val toggleSound = findViewById<TextView>(R.id.toggleSound)
-        fun showSound() { toggleSound.text = if (sounds.muted) "🔇 Quiet" else "🔊 Sound" }
+        fun showSound() { toggleSound.text = if (sounds.muted) "🔇  Sounds off" else "🔊  Sounds on" }
         sounds.muted = prefs.getBoolean(PREF_MUTED, false)
         showSound()
         toggleSound.setOnClickListener {
             sounds.muted = !sounds.muted
             prefs.edit().putBoolean(PREF_MUTED, sounds.muted).apply()
             showSound()
+            showForAWhile(settingsPanel)
         }
-        findViewById<TextView>(R.id.flipCamera).setOnClickListener {
-            useFrontCamera = !useFrontCamera
-            startCamera()
-        }
-        findViewById<TextView>(R.id.pickFace).setOnClickListener {
-            facePicker.visibility = if (facePicker.visibility == View.VISIBLE) View.GONE else View.VISIBLE
-        }
-        recordButton.setOnClickListener {
-            if (videoRecorder.isRecording) stopRecording() else startRecordingAfterAsking()
-        }
-        buildFacePicker()
 
         val switchModel = findViewById<TextView>(R.id.switchModel)
         val savedModel = savedModel()
@@ -141,6 +160,7 @@ class MainActivity : ComponentActivity() {
             switchModel.text = next.label
             prefs.edit().putString(PREF_MODEL, next.name).apply()
             loadModel(next)
+            showForAWhile(settingsPanel)
         }
 
         getSystemService(DisplayManager::class.java).registerDisplayListener(displayListener, null)
@@ -157,7 +177,8 @@ class MainActivity : ComponentActivity() {
 
     /** Runs on the camera thread, so no frame is ever analysed with a half-loaded or closed model. */
     private fun loadModel(model: PoseModel) {
-        status.setText(R.string.loading)
+        hint.setText(R.string.loading)
+        hint.visibility = View.VISIBLE
         worker.execute {
             val old = engine
             engine = null
@@ -165,6 +186,7 @@ class MainActivity : ComponentActivity() {
             try {
                 engine = PoseEngine(applicationContext, model)
                 smoother.reset()
+                hintShown = false
             } catch (e: Exception) {
                 Log.e(TAG, "Could not load the pose models", e)
                 runOnUiThread { Toast.makeText(this, "Could not load models: ${e.message}", Toast.LENGTH_LONG).show() }
@@ -181,13 +203,17 @@ class MainActivity : ComponentActivity() {
                 gravity = Gravity.CENTER
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
                 setOnClickListener { button ->
-                    if (style == FaceStyle.Mix) {
-                        FaceCatalog.rollNewMix()
-                        button.animate().rotationBy(360f).setDuration(350).start()
-                    }
                     settings.face = style
                     highlightChosenFace()
                     skeletons.invalidate()
+                    if (style == FaceStyle.Mix) {
+                        // Stay open so kids can keep rolling the dice.
+                        FaceCatalog.rollNewMix()
+                        button.animate().rotationBy(360f).setDuration(350).start()
+                        showForAWhile(facePicker)
+                    } else {
+                        hide(facePicker)
+                    }
                 }
             }
             faceOptions.addView(option, LinearLayout.LayoutParams(size, size).apply { setMargins(gap, 0, gap, 0) })
@@ -237,7 +263,8 @@ class MainActivity : ComponentActivity() {
                 analysis = newAnalysis
             } catch (e: Exception) {
                 Log.e(TAG, "Camera failed to start", e)
-                status.text = "Camera failed to start: ${e.message}"
+                hint.text = "Camera failed to start: ${e.message}"
+                hint.visibility = View.VISIBLE
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -318,20 +345,40 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Camera thread: keeps the speed in the settings panel and shows the hint only while nobody is in view. */
     private fun reportSpeed(peopleCount: Int) {
-        framesSinceReport++
         val now = SystemClock.elapsedRealtime()
+        if (peopleCount > 0) lastPersonSeenAt = now
+        // During the game the card already says what to do, so the hint would only get in its way.
+        val showHint = now - lastPersonSeenAt > NOBODY_HINT_DELAY_MS && !funEngine.game.isRunning
+        if (showHint != hintShown) {
+            hintShown = showHint
+            runOnUiThread {
+                hint.setText(R.string.point_at_someone)
+                hint.visibility = if (showHint) View.VISIBLE else View.GONE
+            }
+        }
+
+        framesSinceReport++
         val elapsed = now - lastReportAt
         if (elapsed < 1000) return
         val fps = framesSinceReport * 1000f / elapsed
         framesSinceReport = 0
         lastReportAt = now
-        val label = when (peopleCount) {
-            0 -> "Point me at a person!"
-            1 -> "1 person"
-            else -> "$peopleCount people"
-        }
-        runOnUiThread { status.text = "%s  ·  %.0f fps".format(label, fps) }
+        runOnUiThread { speedInfo.text = "Speed: %.0f pictures a second".format(fps) }
+    }
+
+    /** Opens a pop-up row or panel and closes it again if nobody touches it for a few seconds. */
+    private fun showForAWhile(view: View) {
+        view.visibility = View.VISIBLE
+        val closer = autoClosers.getOrPut(view) { Runnable { hide(view) } }
+        ticker.removeCallbacks(closer)
+        ticker.postDelayed(closer, AUTO_CLOSE_MS)
+    }
+
+    private fun hide(view: View) {
+        autoClosers[view]?.let(ticker::removeCallbacks)
+        view.visibility = View.GONE
     }
 
     override fun onPause() {
@@ -352,7 +399,7 @@ class MainActivity : ComponentActivity() {
     private fun hasPermission(permission: String) =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun showHint(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    private fun showToast(text: String) =Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
@@ -361,6 +408,8 @@ class MainActivity : ComponentActivity() {
         const val CAMERA_ALPHA = 0.6f
         const val PREF_MODEL = "pose_model"
         const val PREF_MUTED = "sound_muted"
+        const val NOBODY_HINT_DELAY_MS = 1500L
+        const val AUTO_CLOSE_MS = 5000L
         val LOOK_NAMES = mapOf(
             Look.NEON to "💡 Neon",
             Look.RAINBOW to "🌈 Rainbow",

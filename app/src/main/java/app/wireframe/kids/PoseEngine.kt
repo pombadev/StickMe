@@ -23,8 +23,8 @@ class Person(val box: RectF, val points: FloatArray, val scores: FloatArray, val
 
 /** Whole-body (133 point) RTMPose models shipped with the app. All share the same input and output layout. */
 enum class PoseModel(val asset: String, val label: String) {
-    TINY("wholebody_pose_tiny.onnx", "🐇 Fast"),
-    MEDIUM("wholebody_pose_medium.onnx", "🐢 Detailed"),
+    TINY("wholebody_pose_tiny.onnx", "🐇  Fast tracking"),
+    MEDIUM("wholebody_pose_medium.onnx", "🐢  Detailed tracking"),
 }
 
 /**

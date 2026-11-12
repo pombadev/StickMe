@@ -90,6 +90,7 @@ class GameHud(
     val emoji: String,
     val picture: Pictogram?,
     val subtitle: String,
+    val stars: Int?,
     val timeLeft: Float?,
     val holding: Boolean,
     val bigText: String?,
@@ -196,23 +197,25 @@ class PoseGame(private val sounds: SoundBoard) {
     }
 
     fun hud(now: Long): GameHud? {
-        val progress = "⭐ $score   ·   pose $round of ${poses.size}"
-        fun card(title: String, emoji: String, picture: Pictogram?, subtitle: String, timeLeft: Float? = null, holding: Boolean = false) =
-            GameHud(
-                title, emoji, picture, subtitle, timeLeft, holding,
-                bigText, bigTextBorn, bigTextColor, bigTextStays = phase == Phase.FINISHED,
-            )
+        fun card(
+            title: String, emoji: String, picture: Pictogram?, subtitle: String = "",
+            stars: Int? = null, timeLeft: Float? = null, holding: Boolean = false,
+        ) = GameHud(
+            title, emoji, picture, subtitle, stars, timeLeft, holding,
+            bigText, bigTextBorn, bigTextColor, bigTextStays = phase == Phase.FINISHED,
+        )
         val goal = target
         return when (phase) {
             Phase.IDLE -> null
             Phase.COUNTDOWN -> card("Get ready!", "🎯", null, "Copy the poses!")
             Phase.ROUND -> card(
                 goal!!.title, goal.emoji, goal.picture,
-                if (holdStart != null) "Hold it… 🤩" else progress,
+                subtitle = if (holdStart != null) "Hold it… 🤩" else "",
+                stars = score,
                 timeLeft = (1 - (now - phaseStart).toFloat() / ROUND_MS).coerceIn(0f, 1f),
                 holding = holdStart != null,
             )
-            Phase.CHEER -> card(goal!!.title, goal.emoji, goal.picture, progress, holding = lastRoundWon)
+            Phase.CHEER -> card(goal!!.title, goal.emoji, goal.picture, stars = score, holding = lastRoundWon)
             Phase.FINISHED -> card("You did it!", "🏆", null, "You got $score of ${poses.size} poses")
         }
     }
@@ -266,7 +269,7 @@ class PoseGame(private val sounds: SoundBoard) {
 
 /** Draws the game card at the top and big words in the middle. One per drawing thread. */
 class GameHudPainter(private val effects: EffectsPainter) {
-    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(185, 0, 0, 0) }
+    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(150, 40, 40, 40) }
     private val border = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val figure = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -285,41 +288,50 @@ class GameHudPainter(private val effects: EffectsPainter) {
         val cardWidth = min(width * 0.9f, s * 1.3f)
         val left = (width - cardWidth) / 2
         val right = left + cardWidth
-        val top = height * 0.16f // below the buttons at the top of the screen
-        val bottom = top + s * 0.25f
+        val top = height * 0.09f // just below the small buttons in the top corner
+        val bottom = top + s * 0.2f
         val highlight = if (hud.holding) Color.rgb(118, 255, 3) else Color.WHITE
 
         rect.set(left, top, right, bottom)
         canvas.drawRoundRect(rect, s * 0.04f, s * 0.04f, card)
-        border.color = highlight
-        border.alpha = if (hud.holding) 255 else 110
-        border.strokeWidth = s * (if (hud.holding) 0.012f else 0.005f)
-        canvas.drawRoundRect(rect, s * 0.04f, s * 0.04f, border)
+        if (hud.holding) {
+            border.color = highlight
+            border.strokeWidth = s * 0.012f
+            canvas.drawRoundRect(rect, s * 0.04f, s * 0.04f, border)
+        }
 
-        val box = s * 0.19f
-        val boxLeft = left + s * 0.03f
+        val box = s * 0.14f
+        val boxLeft = left + s * 0.04f
         val boxTop = top + s * 0.03f
         hud.picture?.let { drawPictogram(canvas, it, boxLeft, boxTop, box, highlight) }
-            ?: effects.drawComicText(canvas, hud.emoji, boxLeft + box / 2, boxTop + box * 0.78f, box * 0.8f, Color.WHITE)
+            ?: effects.drawComicText(canvas, hud.emoji, boxLeft + box / 2, boxTop + box * 0.8f, box * 0.85f, Color.WHITE)
 
-        val textLeft = boxLeft + box + s * 0.035f
-        val textRoom = right - s * 0.03f - textLeft
-        title.textSize = s * 0.075f
-        val titleText = "${hud.emoji} ${hud.title}"
-        val tooWide = title.measureText(titleText) / textRoom
+        val textLeft = boxLeft + box + s * 0.05f
+        var textRight = right - s * 0.04f
+        hud.stars?.let { stars ->
+            subtitle.textSize = s * 0.05f
+            subtitle.textAlign = Paint.Align.RIGHT
+            canvas.drawText("⭐ $stars", textRight, top + s * 0.09f, subtitle)
+            textRight -= subtitle.measureText("⭐ $stars") + s * 0.03f
+            subtitle.textAlign = Paint.Align.LEFT
+        }
+        title.textSize = s * 0.08f
+        val tooWide = title.measureText(hud.title) / (textRight - textLeft)
         if (tooWide > 1f) title.textSize /= tooWide
-        canvas.drawText(titleText, textLeft, top + s * 0.105f, title)
-        subtitle.textSize = s * 0.042f
-        canvas.drawText(hud.subtitle, textLeft, top + s * 0.17f, subtitle)
+        canvas.drawText(hud.title, textLeft, top + s * 0.095f, title)
+        if (hud.subtitle.isNotEmpty()) {
+            subtitle.textSize = s * 0.045f
+            canvas.drawText(hud.subtitle, textLeft, top + s * 0.145f, subtitle)
+        }
 
         hud.timeLeft?.let { left ->
-            val barTop = top + s * 0.2f
-            val barBottom = barTop + s * 0.02f
+            val barTop = top + s * 0.16f
+            val barBottom = barTop + s * 0.016f
             bar.color = Color.argb(70, 255, 255, 255)
-            rect.set(textLeft, barTop, right - s * 0.03f, barBottom)
+            rect.set(textLeft, barTop, right - s * 0.04f, barBottom)
             canvas.drawRoundRect(rect, s * 0.01f, s * 0.01f, bar)
             bar.color = Color.HSVToColor(floatArrayOf(120f * left, 0.85f, 1f)) // green → red as time runs out
-            rect.right = textLeft + (right - s * 0.03f - textLeft) * left
+            rect.right = textLeft + (right - s * 0.04f - textLeft) * left
             canvas.drawRoundRect(rect, s * 0.01f, s * 0.01f, bar)
         }
     }
