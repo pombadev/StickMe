@@ -1,0 +1,6 @@
+<resources>
+    <dimen name="friends_top">100dp</dimen>
+    <dimen name="tip_top">26dp</dimen>
+    <dimen name="tip_end">196dp</dimen>
+    <dimen name="nobody_note_top">40dp</dimen>
+</resources>

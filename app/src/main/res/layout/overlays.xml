@@ -1,0 +1,787 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full-screen panels that slide over the play screen. Later ones sit on top of earlier ones. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Looks and faces: a crayon box at the bottom, and a card of faces above it. -->
+    <FrameLayout
+        android:id="@+id/looksSheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="96dp"
+            android:orientation="vertical"
+            android:rotation="-8">
+
+            <TextView
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="now wearing"
+                android:textColor="@color/chalk_dim"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/lookName"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="38sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/lookTip"
+            style="@style/Chalk"
+            android:layout_width="92dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginEnd="18dp"
+            android:layout_marginTop="120dp"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.05"
+            android:rotation="6"
+            android:textColor="@color/yellow"
+            android:textSize="19sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical">
+
+            <app.stickme.kids.PaperCard
+                android:id="@+id/facesCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:layout_marginHorizontal="16dp"
+                android:orientation="vertical"
+                android:rotation="1"
+                app:paperColor="@color/paper">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="14dp"
+                    android:paddingHorizontal="14dp"
+                    android:paddingTop="22dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Faces"
+                            android:textColor="@color/ink"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            style="@style/Chalk"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:text="they copy your mouth and eyes"
+                            android:textColor="@color/ink_brown"
+                            android:textSize="17sp" />
+                    </LinearLayout>
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:paddingBottom="6dp"
+                        android:paddingTop="6dp"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/faceOptions"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clipChildren="false"
+                            android:orientation="horizontal" />
+                    </HorizontalScrollView>
+                </LinearLayout>
+
+                <app.stickme.kids.TapeView
+                    android:layout_width="70dp"
+                    android:layout_height="22dp"
+                    android:layout_marginStart="20dp"
+                    android:rotation="-6"
+                    android:translationY="-11dp"
+                    app:tapeColor="@color/blue"
+                    app:tapeLight="#BEE2FF" />
+            </app.stickme.kids.PaperCard>
+
+            <FrameLayout
+                android:id="@+id/crayonArea"
+                android:layout_width="match_parent"
+                android:layout_height="400dp">
+
+                <app.stickme.kids.CrayonBoxView
+                    android:id="@+id/crayonBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Looks" />
+
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/looksDone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginBottom="30dp"
+                    android:layout_marginEnd="30dp"
+                    android:contentDescription="Done"
+                    android:rotation="-3"
+                    app:stickerBorder="@color/paper_light"
+                    app:stickerColor="@color/ink"
+                    app:stickerRadius="16dp"
+                    app:stickerShape="rounded">
+
+                    <TextView
+                        style="@style/Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:paddingHorizontal="22dp"
+                        android:text="Done"
+                        android:textColor="@color/paper"
+                        android:textSize="22sp" />
+                </app.stickme.kids.StickerButton>
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- The sticker sheet of games. -->
+    <FrameLayout
+        android:id="@+id/gamesSheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B31E2420"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <app.stickme.kids.PaperCard
+            android:id="@+id/gamesPaper"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="30dp"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginTop="64dp"
+            android:rotation="-1.2"
+            app:lineSpacing="31dp"
+            app:paperColor="@color/paper">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:overScrollMode="never">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="20dp"
+                    android:paddingHorizontal="18dp"
+                    android:paddingTop="30dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingEnd="60dp">
+
+                            <TextView
+                                style="@style/Heading"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pick a game!"
+                                android:textColor="@color/ink"
+                                android:textSize="36sp" />
+
+                            <ImageView
+                                android:layout_width="190dp"
+                                android:layout_height="12dp"
+                                android:layout_marginTop="4dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_wavy_underline" />
+
+                            <TextView
+                                style="@style/Chalk"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Peel one off to play. Stand back so I can see all of you."
+                                android:textColor="@color/ink_brown"
+                                android:textSize="19sp" />
+                        </LinearLayout>
+
+                        <app.stickme.kids.StickerButton
+                            android:id="@+id/gamesClose"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:layout_gravity="top|end"
+                            android:contentDescription="Close games"
+                            android:rotation="8"
+                            app:stickerColor="@color/ink"
+                            app:stickerShape="circle">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_close"
+                                android:tint="@color/paper" />
+                        </app.stickme.kids.StickerButton>
+                    </FrameLayout>
+
+                    <GridLayout
+                        android:id="@+id/gamesGrid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:clipChildren="false"
+                        android:columnCount="3" />
+                </LinearLayout>
+            </ScrollView>
+
+            <app.stickme.kids.TapeView
+                android:layout_width="88dp"
+                android:layout_height="24dp"
+                android:layout_gravity="top|start"
+                android:layout_marginStart="26dp"
+                android:rotation="-8"
+                android:translationY="-12dp"
+                app:tapeColor="@color/pink"
+                app:tapeLight="#FFBEDA" />
+
+            <app.stickme.kids.TapeView
+                android:layout_width="88dp"
+                android:layout_height="24dp"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="26dp"
+                android:rotation="7"
+                android:translationY="-12dp"
+                app:tapeColor="@color/mint"
+                app:tapeLight="#BEFAE0" />
+        </app.stickme.kids.PaperCard>
+    </FrameLayout>
+
+    <!-- Grown-ups: a manila folder, opened by holding the lock. -->
+    <FrameLayout
+        android:id="@+id/settingsFolder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B31E2420"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="26dp"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginTop="84dp"
+            android:rotation="1">
+
+            <TextView
+                style="@style/Heading"
+                android:layout_width="180dp"
+                android:layout_height="44dp"
+                android:layout_gravity="top|start"
+                android:layout_marginTop="-34dp"
+                android:background="@drawable/manila_tab"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:text="For grown-ups"
+                android:textColor="@color/ink"
+                android:textSize="22sp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/manila_body"
+                android:elevation="10dp" />
+
+            <app.stickme.kids.PaperCard
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="22dp"
+                android:layout_marginHorizontal="18dp"
+                android:layout_marginTop="28dp"
+                android:elevation="12dp"
+                android:rotation="-2"
+                app:paperColor="@color/paper_light">
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:overScrollMode="never">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingBottom="22dp"
+                        android:paddingHorizontal="22dp"
+                        android:paddingTop="34dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Fine"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Opened by holding the lock for 2 seconds."
+                                android:textSize="14sp" />
+
+                            <FrameLayout
+                                android:id="@+id/settingsClose"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:layout_marginStart="12dp"
+                                android:background="@drawable/close_ring"
+                                android:clickable="true"
+                                android:contentDescription="Close settings"
+                                android:focusable="true">
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:importantForAccessibility="no"
+                                    android:src="@drawable/ic_close" />
+                            </FrameLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="22dp"
+                            android:text="Tracking"
+                            android:textColor="@color/ink"
+                            android:textSize="22sp" />
+
+                        <LinearLayout
+                            android:id="@+id/optFast"
+                            style="@style/Option"
+                            android:contentDescription="Fast tracking">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkFast"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:text="Fast" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/optDetailed"
+                            style="@style/Option"
+                            android:contentDescription="Detailed tracking">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkDetailed"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:text="Detailed" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/trackingNote"
+                            style="@style/Fine"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:layout_marginVertical="22dp"
+                            android:background="@drawable/dashed_divider"
+                            android:layerType="software" />
+
+                        <LinearLayout
+                            android:id="@+id/optSound"
+                            style="@style/Option"
+                            android:contentDescription="Sounds and music">
+
+                            <app.stickme.kids.CheckSquareView
+                                android:id="@+id/checkSound"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp" />
+
+                            <TextView
+                                style="@style/OptionText"
+                                android:text="Sounds and music" />
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="40dp"
+                            android:alpha="0.9"
+                            android:background="@drawable/stamp_border"
+                            android:letterSpacing="0.08"
+                            android:paddingHorizontal="18dp"
+                            android:paddingVertical="14dp"
+                            android:rotation="-7"
+                            android:text="WORKS OFFLINE"
+                            android:textColor="@color/red_dark"
+                            android:textSize="24sp" />
+
+                        <TextView
+                            style="@style/Fine"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:text="No internet permission. The camera picture never leaves this phone, and videos are saved only when the record button is pressed." />
+                    </LinearLayout>
+                </ScrollView>
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="70dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="46dp"
+                    android:layout_marginTop="-18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_paperclip" />
+            </app.stickme.kids.PaperCard>
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Results. -->
+    <ScrollView
+        android:id="@+id/resultsScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minHeight="760dp">
+
+            <app.stickme.kids.ChalkArtView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:chalkScene="results" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:layout_marginTop="48dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/resultGame"
+                    style="@style/Chalk"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:rotation="-2"
+                    android:textColor="@color/chalk_dim"
+                    android:textSize="22sp" />
+
+                <TextView
+                    style="@style/Heading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:rotation="-3"
+                    android:text="You did it!"
+                    android:textColor="@color/yellow"
+                    android:textSize="50sp" />
+            </LinearLayout>
+
+            <app.stickme.kids.RibbonView
+                android:id="@+id/resultRibbon"
+                android:layout_width="240dp"
+                android:layout_height="330dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="140dp"
+                android:elevation="8dp" />
+
+            <app.stickme.kids.StickerButton
+                android:id="@+id/newBestBadge"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="36dp"
+                android:layout_marginTop="400dp"
+                android:rotation="12"
+                android:visibility="gone"
+                app:stickerColor="@color/yellow"
+                app:stickerShape="star">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingTop="10dp">
+
+                    <TextView
+                        style="@style/Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NEW"
+                        android:textColor="@color/ink"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        style="@style/Chalk"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="best!"
+                        android:textColor="@color/ink"
+                        android:textSize="15sp" />
+                </LinearLayout>
+            </app.stickme.kids.StickerButton>
+
+            <TextView
+                android:id="@+id/beatYour"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="30dp"
+                android:layout_marginTop="508dp"
+                android:rotation="6"
+                android:textSize="20sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="42dp"
+                android:layout_marginHorizontal="22dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/playAgain"
+                    android:layout_width="match_parent"
+                    android:layout_height="76dp"
+                    android:contentDescription="Play again"
+                    android:rotation="-1.5"
+                    app:stickerColor="@color/yellow"
+                    app:stickerShape="torn">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_replay" />
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:text="Play again"
+                            android:textColor="@color/ink"
+                            android:textSize="30sp" />
+                    </LinearLayout>
+                </app.stickme.kids.StickerButton>
+
+                <LinearLayout
+                    android:id="@+id/pickAnother"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:clickable="true"
+                    android:contentDescription="Pick another game"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="44dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/Chalk"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="or pick another game"
+                        android:textSize="26sp" />
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="20dp"
+                        android:layout_marginStart="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_squiggle_arrow" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </ScrollView>
+
+    <!-- First run: ask a grown-up before the camera is used. -->
+    <ScrollView
+        android:id="@+id/cameraAsk"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minHeight="620dp">
+
+            <app.stickme.kids.ChalkArtView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:chalkScene="camera" />
+
+            <app.stickme.kids.PaperCard
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="22dp"
+                android:rotation="-1.5"
+                app:paperColor="@color/paper_light">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="26dp"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="34dp">
+
+                    <TextView
+                        style="@style/Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hi, grown-up!"
+                        android:textColor="@color/ink"
+                        android:textSize="32sp" />
+
+                    <TextView
+                        style="@style/Fine"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Stick Me uses the camera to turn the people in front of it into stick figures."
+                        android:textSize="15sp" />
+
+                    <TextView
+                        style="@style/Fine"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="The picture stays on this phone. The app has no internet access, and videos are saved only when someone presses record."
+                        android:textSize="15sp" />
+
+                    <app.stickme.kids.StickerButton
+                        android:id="@+id/allowCamera"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginTop="20dp"
+                        android:contentDescription="Allow camera"
+                        android:rotation="1"
+                        app:stickerColor="@color/yellow"
+                        app:stickerRadius="18dp"
+                        app:stickerShape="rounded">
+
+                        <TextView
+                            style="@style/Heading"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:text="Allow camera"
+                            android:textColor="@color/ink"
+                            android:textSize="26sp" />
+                    </app.stickme.kids.StickerButton>
+                </LinearLayout>
+
+                <app.stickme.kids.TapeView
+                    android:layout_width="90dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="30dp"
+                    android:rotation="-6"
+                    android:translationY="-12dp"
+                    app:tapeColor="@color/yellow"
+                    app:tapeLight="#FFF0B4" />
+
+                <app.stickme.kids.TapeView
+                    android:layout_width="90dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="30dp"
+                    android:rotation="5"
+                    android:translationY="-12dp"
+                    app:tapeColor="@color/pink"
+                    app:tapeLight="#FFBEDA" />
+            </app.stickme.kids.PaperCard>
+
+            <TextView
+                android:id="@+id/notNow"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="60dp"
+                android:gravity="center"
+                android:minHeight="44dp"
+                android:paddingHorizontal="20dp"
+                android:text="Not now"
+                android:textSize="22sp" />
+        </FrameLayout>
+    </ScrollView>
+
+    <!-- Waking up. -->
+    <app.stickme.kids.ChalkArtView
+        android:id="@+id/wakeScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:contentDescription="Stick Me is waking up"
+        app:chalkScene="wake" />
+</merge>

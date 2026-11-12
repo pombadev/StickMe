@@ -127,7 +127,8 @@ class FunEngine(private val settings: SceneSettings, kit: GameKit) {
 
     private var lastUpdate = 0L
 
-    fun update(people: List<Person>, now: Long, imageWidth: Int, imageHeight: Int): FunSnapshot {
+    /** [visible] is the part of the picture shown on screen, in image pixels (everything, if not given). */
+    fun update(people: List<Person>, now: Long, imageWidth: Int, imageHeight: Int, visible: android.graphics.RectF? = null): FunSnapshot {
         val elapsed = if (lastUpdate == 0L) 0L else now - lastUpdate
         lastUpdate = now
         particles.removeAll { !it.isAlive(now) }
@@ -145,7 +146,7 @@ class FunEngine(private val settings: SceneSettings, kit: GameKit) {
         }
         trackers.values.removeAll { now - it.lastSeen > 2000 }
 
-        val game = games.update(Tick(bodies, now, elapsed, this, imageWidth, imageHeight))
+        val game = games.update(Tick(bodies, now, elapsed, this, imageWidth, imageHeight, visible ?: android.graphics.RectF(0f, 0f, imageWidth.toFloat(), imageHeight.toFloat())))
 
         if (particles.size > MAX_PARTICLES) particles.subList(0, particles.size - MAX_PARTICLES).clear()
         if (settings.look == Look.BALLERINA) ribbons.update(bodies) else ribbons.clear()

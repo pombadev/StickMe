@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paper & chalk palette. Paper.kt mirrors these for code that draws without a Context. -->
+<resources>
+    <color name="chalkboard">#1E2420</color>
+    <color name="chalk">#EDEBE3</color>
+    <color name="chalk_dim">#B8BDB4</color>
+    <color name="paper">#F6F0E1</color>
+    <color name="paper_light">#FBF7EC</color>
+    <color name="ink">#22201C</color>
+    <color name="ink_brown">#4A3F33</color>
+    <color name="ink_warm">#2B2118</color>
+    <color name="cardboard">#C89A64</color>
+    <color name="manila">#E9C98B</color>
+    <color name="manila_tab">#E2BE7C</color>
+    <color name="yellow">#FFE27A</color>
+    <color name="pink">#FF9FC6</color>
+    <color name="mint">#8FF2C8</color>
+    <color name="blue">#8CCBFF</color>
+    <color name="peach">#FFC28A</color>
+    <color name="red">#E8483B</color>
+    <color name="red_dark">#C8362B</color>
+</resources>

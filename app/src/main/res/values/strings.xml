@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Stick Me!</string>
-    <string name="need_camera">Stick Me needs the camera to turn people into glowing stick figures.</string>
-    <string name="point_at_someone">Point me at a person! 👋</string>
-    <string name="loading">Waking up… 😴</string>
+    <string name="need_camera">I need the camera to draw you! Tap here.</string>
+    <string name="loading">drawing you a friend...</string>
+    <string name="hands_up_tip">Hands UP for confetti!</string>
+    <string name="camera_failed">The camera did not start. Tap here to try again.</string>
 </resources>

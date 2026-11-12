@@ -1,11 +1,7 @@
 package app.stickme.kids
 
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Typeface
-import kotlin.math.min
 import kotlin.random.Random
 
 /** Every game in the 🎯 menu. */
@@ -49,7 +45,10 @@ class GameKit(
     val random: Random = Random.Default,
 )
 
-/** One camera frame as a game sees it. [elapsed] is the time since the previous frame. */
+/**
+ * One camera frame as a game sees it. [elapsed] is the time since the previous frame.
+ * [visible] is the part of the picture that shows on screen (the camera picture is cropped to fill it).
+ */
 class Tick(
     val bodies: List<Body>,
     val now: Long,
@@ -57,24 +56,16 @@ class Tick(
     val fx: FunEngine,
     val imageWidth: Int,
     val imageHeight: Int,
-)
+    val visible: RectF = RectF(0f, 0f, imageWidth.toFloat(), imageHeight.toFloat()),
+) {
+    fun withBodies(newBodies: List<Body>) = Tick(newBodies, now, elapsed, fx, imageWidth, imageHeight, visible)
+}
 
-/** The card at the top of the screen. [corner] is short text on the right, such as the score. */
-class Card(
-    val title: String,
-    val emoji: String,
-    val picture: Pictogram? = null,
-    val corner: String? = null,
-    val subtitle: String = "",
-    val timeLeft: Float? = null,
-    val highlight: Boolean = false,
-)
+/** What the screen is showing, so the buttons around it can change to match. */
+enum class SceneMode { FIT, PICK, PLAY, RESULT }
 
-/** A big bouncing word in the middle of the screen, like a countdown number or "GREAT!". */
-class BigText(val text: String, val born: Long, val color: Int, val stays: Boolean = false)
-
-/** Where and when a game is being drawn, plus the paints to draw with. */
-class GameCanvas(val canvas: Canvas, val width: Int, val height: Int, val fit: ImageFit, val now: Long, val tools: GameTools)
+/** How a finished game went, for the results screen. */
+class ResultInfo(val kind: GameKind, val score: Int, val unit: String, val newBest: Boolean, val previousBest: Int)
 
 /**
  * A game frozen at one moment, safe to draw from both the screen and the video recorder.
@@ -85,6 +76,11 @@ class GameScene(
     val big: BigText?,
     private val behind: ((GameCanvas) -> Unit)? = null,
     private val front: ((GameCanvas) -> Unit)? = null,
+    val mode: SceneMode = SceneMode.PLAY,
+    /** A short chalk hint for the bottom of the screen. */
+    val hint: String = "",
+    val canSkip: Boolean = false,
+    val result: ResultInfo? = null,
 ) {
     fun drawBehind(c: GameCanvas) {
         card?.let { c.tools.drawCard(c, it) }
@@ -98,17 +94,19 @@ class GameScene(
 }
 
 /**
- * Shared flow for every game: 3-2-1 countdown, play, then a results screen with confetti
- * and the best score. Games fill in [play] and [playScene]. Camera thread only.
+ * Shared flow for every game: get ready (stand in view, and for solo games raise your hands to claim it),
+ * a 3-2-1 countdown, play, then a results screen that stays until the kid chooses what next.
+ * Games fill in [play] and [playScene]. Camera thread only.
  */
 abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
 
-    private enum class Stage { COUNTDOWN, PLAY, RESULT, DONE }
+    private enum class Stage { GATE, COUNTDOWN, PLAY, RESULT, DONE }
 
-    private var stage = Stage.COUNTDOWN
+    private var stage = Stage.GATE
     private var stageStart = -1L
     private var countdownShown = 0
-    private var resultCard: Card? = null
+    private var result: ResultInfo? = null
+    private var lastPlayerAt: Pair<Float, Float>? = null
 
     protected var big: BigText? = null
     var score = 0
@@ -116,6 +114,26 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
 
     /** One short sentence shown during the countdown. */
     protected abstract val howToPlay: String
+
+    /** Solo games are played by one person, picked by raising hands when several people are in view. */
+    open val solo = false
+
+    /** Which parts of the body must be in view before the game starts. */
+    open val needs: Set<Part> = Part.ALL
+
+    /** How many people must be fully in view; the game waits until they are. */
+    open val needPeople = 1
+
+    /** What the score counts, for the results screen. */
+    open val scoreUnit = "points"
+
+    /** The person playing a solo game, once picked. */
+    var playerId: Int? = null
+        private set
+
+    private val gate by lazy { GameGate(kit, kind.label, solo, needs, needPeople) }
+
+    internal val isPlaying get() = stage == Stage.PLAY
 
     /** Plays one frame. Returns false when the game is over. */
     protected abstract fun play(t: Tick): Boolean
@@ -127,15 +145,15 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
     /** Called once when the game ends or is stopped early, for example to stop music. */
     protected open fun onStop() {}
 
-    protected open fun resultText(): String = "⭐ $score"
-
-    protected open fun resultSubtitle(newBest: Boolean): String =
-        if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
-
-    /** Returns false once the results have been shown long enough. */
+    /** Returns false once the game has been stopped. The results screen stays up until then. */
     fun update(t: Tick): Boolean {
         if (stageStart < 0) stageStart = t.now
         when (stage) {
+            Stage.GATE -> if (gate.update(t)) {
+                playerId = gate.player
+                stage = Stage.COUNTDOWN
+                stageStart = t.now
+            }
             Stage.COUNTDOWN -> {
                 val left = 3 - ((t.now - stageStart) / COUNT_MS).toInt()
                 if (left <= 0) {
@@ -143,25 +161,49 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
                     stageStart = t.now
                     show("GO!", t.now, Color.WHITE)
                     kit.sounds.play(Sound.GO)
-                    onStart(t)
+                    onStart(playersOnly(t))
                 } else if (left != countdownShown) {
                     countdownShown = left
                     show(left.toString(), t.now, YELLOW)
                     kit.sounds.play(Sound.TICK)
                 }
             }
-            Stage.PLAY -> if (!play(t)) finish(t)
-            Stage.RESULT -> if (t.now - stageStart > RESULT_MS) stage = Stage.DONE
-            Stage.DONE -> Unit
+            Stage.PLAY -> if (!play(playersOnly(t))) finish(t)
+            Stage.RESULT, Stage.DONE -> Unit
         }
         return stage != Stage.DONE
     }
 
-    fun scene(now: Long): GameScene = when (stage) {
-        Stage.COUNTDOWN -> GameScene(Card(kind.label, kind.emoji, subtitle = howToPlay), big)
-        Stage.PLAY -> playScene(now)
-        Stage.RESULT, Stage.DONE -> GameScene(resultCard, big)
+    /** In a solo game only the person who claimed it counts; everyone else is watching. */
+    private fun playersOnly(t: Tick): Tick {
+        val id = playerId
+        if (!solo || id == null) return t
+        var mine = t.bodies.filter { it.person.id == id }
+        if (mine.isEmpty() && t.bodies.isNotEmpty()) {
+            // The tracker may have given the same person a new number: pick up whoever is where they were.
+            val last = lastPlayerAt
+            val near = last?.let { (x, y) ->
+                t.bodies.minByOrNull { Math.hypot((it.person.box.centerX() - x).toDouble(), (it.person.box.centerY() - y).toDouble()) }
+                    ?.takeIf { Math.hypot((it.person.box.centerX() - x).toDouble(), (it.person.box.centerY() - y).toDouble()) < t.imageWidth * 0.35 }
+            }
+            if (near != null) {
+                playerId = near.person.id
+                mine = listOf(near)
+            }
+        }
+        mine.firstOrNull()?.let { lastPlayerAt = it.person.box.centerX() to it.person.box.centerY() }
+        return t.withBodies(mine)
     }
+
+    fun scene(now: Long): GameScene = when (stage) {
+        Stage.GATE -> gate.scene(now)
+        Stage.COUNTDOWN -> GameScene(Card(kind.label, subtitle = howToPlay), big)
+        Stage.PLAY -> playScene(now)
+        Stage.RESULT, Stage.DONE -> GameScene(null, null, mode = SceneMode.RESULT, result = result)
+    }
+
+    /** Lets the kid start anyway when the body check can't be met, for example while sitting down. */
+    fun skipGate() = gate.skip()
 
     fun stop() {
         if (stage == Stage.PLAY) onStop()
@@ -172,9 +214,10 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
         onStop()
         stage = Stage.RESULT
         stageStart = t.now
+        val previous = kit.scores.best(kind)
         val newBest = kit.scores.offer(kind, score)
-        resultCard = Card("You did it!", "🏆", subtitle = resultSubtitle(newBest))
-        show(resultText(), t.now, YELLOW, stays = true)
+        result = ResultInfo(kind, score, scoreUnit, newBest, previous)
+        big = null
         t.fx.confettiRain(t.now, t.imageWidth, t.imageHeight)
         t.fx.confettiRain(t.now + 600, t.imageWidth, t.imageHeight)
         kit.sounds.play(Sound.WIN)
@@ -186,7 +229,6 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
 
     companion object {
         const val COUNT_MS = 900L
-        const val RESULT_MS = 5500L
         val YELLOW = Color.rgb(255, 235, 59)
         val GREEN = Color.rgb(118, 255, 3)
         val ORANGE = Color.rgb(255, 152, 0)
@@ -195,13 +237,14 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
 }
 
 /**
- * Starts, runs and stops the chosen game. Camera thread, except [requestStart] and [requestStop],
+ * Starts, runs and stops the chosen game. Camera thread, except the `request...` functions,
  * which any thread may call.
  */
 class GameHost(private val kit: GameKit) {
 
     @Volatile private var requested: GameKind? = null
     @Volatile private var stopRequested = false
+    @Volatile private var skipRequested = false
     @Volatile var current: GameKind? = null
         private set
 
@@ -218,6 +261,8 @@ class GameHost(private val kit: GameKit) {
 
     fun requestStop() { stopRequested = true }
 
+    fun requestSkipGate() { skipRequested = true }
+
     fun update(t: Tick): GameScene? {
         if (stopRequested) {
             stopRequested = false
@@ -232,6 +277,10 @@ class GameHost(private val kit: GameKit) {
             onChanged?.invoke(kind)
         }
         val running = game ?: return null
+        if (skipRequested) {
+            skipRequested = false
+            running.skipGate()
+        }
         if (!running.update(t)) {
             end()
             return null
@@ -260,118 +309,5 @@ class GameHost(private val kit: GameKit) {
         GameKind.PAINT -> AirPainting(kit)
         GameKind.WORKOUT -> Workout(kit)
         GameKind.BALLET -> BalletClass(kit)
-    }
-}
-
-/** Paints and drawing helpers for games. One per drawing thread. */
-class GameTools(val effects: EffectsPainter) {
-    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(150, 40, 40, 40) }
-    private val border = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val figure = Paint(stroke)
-    private val head = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val title = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; typeface = Typeface.DEFAULT_BOLD }
-    private val small = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = MiniGame.YELLOW }
-    private val bar = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val rect = RectF()
-
-    /** The card with what to do. Drawn under the stick figures so it never hides anyone. */
-    fun drawCard(c: GameCanvas, info: Card) {
-        val canvas = c.canvas
-        val s = min(c.width, c.height).toFloat()
-        val cardWidth = min(c.width * 0.9f, s * 1.3f)
-        val left = (c.width - cardWidth) / 2
-        val right = left + cardWidth
-        val top = c.height * 0.09f // just below the small buttons in the top corner
-        val bottom = top + s * 0.2f
-        val highlight = if (info.highlight) MiniGame.GREEN else Color.WHITE
-
-        rect.set(left, top, right, bottom)
-        canvas.drawRoundRect(rect, s * 0.04f, s * 0.04f, card)
-        if (info.highlight) {
-            border.color = highlight
-            border.strokeWidth = s * 0.012f
-            canvas.drawRoundRect(rect, s * 0.04f, s * 0.04f, border)
-        }
-
-        val box = s * 0.14f
-        val boxLeft = left + s * 0.04f
-        val boxTop = top + s * 0.03f
-        info.picture?.let { drawPictogram(canvas, it, boxLeft, boxTop, box, highlight) }
-            ?: effects.drawComicText(canvas, info.emoji, boxLeft + box / 2, boxTop + box * 0.8f, box * 0.85f, Color.WHITE)
-
-        val textLeft = boxLeft + box + s * 0.05f
-        var textRight = right - s * 0.04f
-        info.corner?.let { corner ->
-            small.textSize = s * 0.05f
-            small.textAlign = Paint.Align.RIGHT
-            canvas.drawText(corner, textRight, top + s * 0.09f, small)
-            textRight -= small.measureText(corner) + s * 0.03f
-            small.textAlign = Paint.Align.LEFT
-        }
-        title.textSize = s * 0.08f
-        val tooWide = title.measureText(info.title) / (textRight - textLeft)
-        if (tooWide > 1f) title.textSize /= tooWide
-        canvas.drawText(info.title, textLeft, top + s * 0.095f, title)
-        if (info.subtitle.isNotEmpty()) {
-            small.textSize = s * 0.045f
-            val subtitleTooWide = small.measureText(info.subtitle) / (right - s * 0.04f - textLeft)
-            if (subtitleTooWide > 1f) small.textSize /= subtitleTooWide
-            canvas.drawText(info.subtitle, textLeft, top + s * 0.145f, small)
-        }
-
-        info.timeLeft?.let { left ->
-            val barTop = top + s * 0.16f
-            rect.set(textLeft, barTop, right - s * 0.04f, barTop + s * 0.016f)
-            bar.color = Color.argb(70, 255, 255, 255)
-            canvas.drawRoundRect(rect, s * 0.01f, s * 0.01f, bar)
-            bar.color = Color.HSVToColor(floatArrayOf(120f * left, 0.85f, 1f)) // green → red as time runs out
-            rect.right = textLeft + (right - s * 0.04f - textLeft) * left
-            canvas.drawRoundRect(rect, s * 0.01f, s * 0.01f, bar)
-        }
-    }
-
-    /** Countdown numbers and cheers in the middle of the screen, drawn on top of everything. */
-    fun drawBigText(c: GameCanvas, text: BigText) {
-        val s = min(c.width, c.height).toFloat()
-        val life = ((c.now - text.born) / BIG_TEXT_MS.toFloat()).coerceAtLeast(0f)
-        if (life >= 1f && !text.stays) return
-        val size = s * (if (text.text.length <= 2) 0.34f else 0.15f) * EffectsPainter.bounce(min(life, 1f))
-        val alpha = if (text.stays) 1f else EffectsPainter.fadeOut(life)
-        val tooWide = (s * 0.15f * text.text.length * 0.6f) / (c.width * 0.9f)
-        val fitted = if (text.text.length > 2 && tooWide > 1f) size / tooWide else size
-        effects.drawComicText(c.canvas, text.text, c.width / 2f, c.height * 0.52f, fitted, text.color, alpha)
-    }
-
-    /** A number or word floating above someone's head, in image coordinates. */
-    fun drawLabel(c: GameCanvas, text: String, imageX: Float, imageY: Float, imageSize: Float, color: Int) {
-        val size = imageSize * c.fit.scale
-        val y = maxOf(c.fit.y(imageY), size * 1.1f)
-        effects.drawComicText(c.canvas, text, c.fit.x(imageX), y, size, color)
-    }
-
-    fun drawPictogram(canvas: Canvas, picture: Pictogram, left: Float, top: Float, size: Float, color: Int) {
-        val unit = size / 100f
-        figure.color = color
-        figure.strokeWidth = 7f * unit
-        for (line in picture.lines) {
-            for (i in 0 until line.size - 2 step 2) {
-                canvas.drawLine(
-                    left + line[i] * unit, top + line[i + 1] * unit,
-                    left + line[i + 2] * unit, top + line[i + 3] * unit, figure,
-                )
-            }
-        }
-        head.color = color
-        canvas.drawCircle(left + picture.headX * unit, top + picture.headY * unit, 8f * unit, head)
-    }
-
-    private companion object {
-        const val BIG_TEXT_MS = 1100L
     }
 }

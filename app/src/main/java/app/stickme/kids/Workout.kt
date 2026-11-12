@@ -108,6 +108,8 @@ enum class Exercise(val title: String, val emoji: String, val picture: Pictogram
 class Workout(kit: GameKit) : MiniGame(kit, GameKind.WORKOUT) {
 
     override val howToPlay = "5 exercises, 30 seconds each. Let's move!"
+    override val solo = true
+    override val scoreUnit = "moves"
 
     private class Label(val x: Float, val y: Float, val count: Int, val size: Float)
 
@@ -170,15 +172,15 @@ class Workout(kit: GameKit) : MiniGame(kit, GameKind.WORKOUT) {
         val card = if (resting) {
             val next = Exercise.entries[exercise + 1]
             Card(
-                "Rest 😮‍💨", next.emoji, next.picture,
-                corner = "💪 $score",
+                "Rest", next.picture,
+                tally = score, unit = scoreUnit,
                 subtitle = "Next: ${next.title}",
                 timeLeft = (1 - (now - stageStart).toFloat() / REST_MS).coerceIn(0f, 1f),
             )
         } else {
             Card(
-                current.title, current.emoji, current.picture,
-                corner = "💪 $score",
+                current.title, current.picture,
+                tally = score, unit = scoreUnit,
                 subtitle = "${exercise + 1} of ${Exercise.entries.size}",
                 timeLeft = (1 - (now - stageStart).toFloat() / EXERCISE_MS).coerceIn(0f, 1f),
             )
@@ -188,11 +190,6 @@ class Workout(kit: GameKit) : MiniGame(kit, GameKind.WORKOUT) {
             shown.forEach { c.tools.drawLabel(c, it.count.toString(), it.x, it.y, it.size, Color.rgb(255, 235, 59)) }
         })
     }
-
-    override fun resultText() = "💪 $score"
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "You did $score moves! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val EXERCISE_MS = 30_000L

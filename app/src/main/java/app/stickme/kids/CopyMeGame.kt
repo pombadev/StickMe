@@ -4,6 +4,8 @@ package app.stickme.kids
 class CopyMeGame(kit: GameKit) : MiniGame(kit, GameKind.COPY_ME) {
 
     override val howToPlay = "Copy the poses!"
+    override val solo = true
+    override val scoreUnit = "poses"
 
     private val poses = PoseTarget.entries.shuffled(kit.random)
     private var round = -1
@@ -59,17 +61,14 @@ class CopyMeGame(kit: GameKit) : MiniGame(kit, GameKind.COPY_ME) {
         val goal = poses[round]
         val cheering = cheeringUntil != null
         val card = Card(
-            goal.title, goal.emoji, goal.picture,
-            corner = "⭐ $score",
+            goal.title, goal.picture,
+            tally = score, unit = scoreUnit,
             subtitle = if (holdStart != null && !cheering) "Hold it… 🤩" else "",
             timeLeft = if (cheering) null else (1 - (now - roundStart).toFloat() / ROUND_MS).coerceIn(0f, 1f),
             highlight = if (cheering) lastRoundWon else holdStart != null,
         )
         return GameScene(card, big)
     }
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "You got $score of ${poses.size} poses" + if (newBest) " 🏆" else ""
 
     private companion object {
         const val ROUND_MS = 9000L

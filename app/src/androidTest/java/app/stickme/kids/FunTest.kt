@@ -72,15 +72,22 @@ class FunTest {
         val changes = mutableListOf<GameKind?>()
         fx.games.onChanged = { changes += it }
         fx.games.requestStart(GameKind.COPY_ME)
-        var lastCard: Card? = null
+        var lastScene: GameScene? = null
         var nextPose = standing()
-        repeat(1200) {
-            val card = step(nextPose).game?.card ?: return@repeat
-            lastCard = card
-            val target = PoseTarget.entries.firstOrNull { it.title == card.title }
+        repeat(1500) {
+            val scene = step(nextPose).game ?: return@repeat
+            lastScene = scene
+            val target = PoseTarget.entries.firstOrNull { it.title == scene.card?.title }
             nextPose = target?.let(::poseFor) ?: standing()
         }
-        assertTrue(lastCard!!.subtitle, lastCard!!.subtitle.startsWith("You got 7 of 7 poses"))
+        val result = lastScene!!.result
+        assertEquals(SceneMode.RESULT, lastScene!!.mode)
+        assertEquals(7, result!!.score)
+        assertEquals("poses", result.unit)
+        assertEquals(listOf<GameKind?>(GameKind.COPY_ME), changes) // the results stay up until the kid chooses
+
+        fx.games.requestStop()
+        step(standing())
         assertEquals(listOf(GameKind.COPY_ME, null), changes)
     }
 
@@ -121,6 +128,8 @@ class FunTest {
         settings.look = Look.NEON
         fx.games.requestStart(GameKind.COPY_ME)
         repeat(40) { snapshot = step(standing()) }
+        var waited = 0
+        while (PoseTarget.entries.none { it.title == snapshot.game?.card?.title } && waited++ < 300) snapshot = step(standing())
         val target = PoseTarget.entries.first { it.title == snapshot.game!!.card!!.title }
         save("5_game_round", standing(), snapshot)
         repeat(7) { snapshot = step(poseFor(target)) }

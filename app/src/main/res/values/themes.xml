@@ -1,40 +1,63 @@
 <resources>
     <style name="Theme.StickMe" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">@android:color/black</item>
-        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowBackground">@color/chalkboard</item>
+        <item name="android:statusBarColor">@color/chalkboard</item>
+        <item name="android:navigationBarColor">@color/chalkboard</item>
         <item name="android:windowFullscreen">true</item>
     </style>
 
-    <style name="BigButton">
-        <item name="android:layout_width">60dp</item>
-        <item name="android:layout_height">60dp</item>
-        <item name="android:layout_marginStart">6dp</item>
-        <item name="android:layout_marginEnd">6dp</item>
-        <item name="android:background">@drawable/round_button</item>
-        <item name="android:gravity">center</item>
-        <item name="android:textSize">26sp</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
+    <!-- Handwriting, for body text. -->
+    <style name="Chalk">
+        <item name="android:fontFamily">@font/gochi_hand</item>
+        <item name="android:textColor">@color/chalk</item>
+        <item name="android:includeFontPadding">false</item>
     </style>
 
-    <style name="SmallButton" parent="BigButton">
-        <item name="android:layout_width">44dp</item>
-        <item name="android:layout_height">44dp</item>
-        <item name="android:layout_marginStart">4dp</item>
-        <item name="android:layout_marginEnd">4dp</item>
-        <item name="android:textSize">20sp</item>
+    <!-- Fat rounded letters, for titles and big buttons. -->
+    <style name="Heading" parent="Chalk">
+        <item name="android:fontFamily">@font/bagel_fat_one</item>
     </style>
 
-    <style name="SettingsRow">
+    <!-- Small print for grown-ups, in a plain system font so it stays easy to read. -->
+    <style name="Fine">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/ink_brown</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+    </style>
+
+    <!-- The small caption under a dock sticker. -->
+    <style name="DockLabel" parent="Chalk">
+        <item name="android:textColor">@color/ink_warm</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:layout_marginTop">6dp</item>
+    </style>
+
+    <!-- A row in the grown-ups folder: a tick box and a word. -->
+    <style name="Option">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:paddingHorizontal">14dp</item>
-        <item name="android:paddingVertical">10dp</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:textSize">16sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
-        <item name="android:background">?android:attr/selectableItemBackground</item>
+    </style>
+
+    <style name="OptionText" parent="Chalk">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="DockCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:clipChildren">false</item>
     </style>
 </resources>

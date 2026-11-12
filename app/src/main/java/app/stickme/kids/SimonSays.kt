@@ -7,6 +7,8 @@ package app.stickme.kids
 class SimonSays(kit: GameKit) : MiniGame(kit, GameKind.SIMON) {
 
     override val howToPlay = "Only move when Simon says!"
+    override val solo = true
+    override val scoreUnit = "right"
 
     private var round = 0
     private var command = PoseTarget.HANDS_UP
@@ -87,17 +89,14 @@ class SimonSays(kit: GameKit) : MiniGame(kit, GameKind.SIMON) {
         val cheering = cheeringUntil != null
         val hearts = "❤️".repeat(hearts.coerceAtLeast(0))
         val card = Card(
-            command.title, command.emoji, command.picture,
-            corner = "⭐ $score",
+            command.title, command.picture,
+            tally = score, unit = scoreUnit,
             subtitle = (if (simonSaid) "🗣️ Simon says!" else "🤔 Did Simon say it?") + "   $hearts",
             timeLeft = if (cheering) null else (1 - (now - roundStart).toFloat() / ROUND_MS).coerceIn(0f, 1f),
             highlight = holdStart != null && !cheering,
         )
         return GameScene(card, big)
     }
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "$score of $ROUNDS right! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val ROUNDS = 10

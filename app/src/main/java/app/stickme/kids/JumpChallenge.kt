@@ -6,6 +6,7 @@ import android.graphics.Color
 class JumpChallenge(kit: GameKit) : MiniGame(kit, GameKind.JUMPS) {
 
     override val howToPlay = "Jump as many times as you can!"
+    override val scoreUnit = "jumps"
 
     private class Counter(val x: Float, val y: Float, val count: Int, val size: Float)
 
@@ -39,18 +40,13 @@ class JumpChallenge(kit: GameKit) : MiniGame(kit, GameKind.JUMPS) {
     override fun playScene(now: Long): GameScene {
         val shown = counters
         val card = Card(
-            "Jump Challenge", "🦘", corner = "🦘 $score",
+            "Jump Challenge", tally = score, unit = scoreUnit,
             timeLeft = (1 - (now - playStart).toFloat() / GAME_MS).coerceIn(0f, 1f),
         )
         return GameScene(card, big, front = { c ->
             shown.forEach { c.tools.drawLabel(c, it.count.toString(), it.x, it.y, it.size, Color.rgb(255, 235, 59)) }
         })
     }
-
-    override fun resultText() = "🦘 $score"
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "$score jumps! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val GAME_MS = 30_000L

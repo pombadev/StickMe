@@ -14,6 +14,8 @@ import kotlin.math.roundToInt
 class MirrorMe(kit: GameKit) : MiniGame(kit, GameKind.MIRROR) {
 
     override val howToPlay = "2 players: the leader makes a pose, the other copies!"
+    override val needPeople = 2
+    override val scoreUnit = "stars"
 
     private enum class Phase { POSE, COPY, SCORE }
 
@@ -81,27 +83,24 @@ class MirrorMe(kit: GameKit) : MiniGame(kit, GameKind.MIRROR) {
 
     override fun playScene(now: Long): GameScene {
         val card = when {
-            waitingForTwo -> Card("Mirror Me", "👯", subtitle = "Need exactly 2 people in the picture!")
+            waitingForTwo -> Card("Mirror Me", subtitle = "Need exactly 2 people in the picture!")
             phase == Phase.POSE -> Card(
-                "Leader 👑: make a pose!", "🪞", corner = "⭐ $score",
+                "Leader 👑: make a pose!", tally = score, unit = scoreUnit,
                 subtitle = "Round ${round + 1} of $ROUNDS",
                 timeLeft = (1 - (now - phaseStart).toFloat() / POSE_MS).coerceIn(0f, 1f),
             )
             phase == Phase.COPY -> Card(
-                "Copy the leader!", "🪞", corner = "⭐ $score",
+                "Copy the leader!", tally = score, unit = scoreUnit,
                 timeLeft = (1 - (now - phaseStart).toFloat() / COPY_MS).coerceIn(0f, 1f),
                 highlight = true,
             )
-            else -> Card("Mirror Me", "🪞", corner = "⭐ $score", subtitle = "Round ${round + 1} of $ROUNDS")
+            else -> Card("Mirror Me", tally = score, unit = scoreUnit, subtitle = "Round ${round + 1} of $ROUNDS")
         }
         val shownCrown = crown
         return GameScene(card, big, front = { c ->
             shownCrown?.let { c.tools.drawLabel(c, "👑", it.x, it.y, it.size, Color.WHITE) }
         })
     }
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "Team score: $score stars! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     companion object {
         private const val ROUNDS = 6

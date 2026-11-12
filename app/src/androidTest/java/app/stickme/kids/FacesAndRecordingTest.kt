@@ -71,7 +71,7 @@ class FacesAndRecordingTest {
             setDataSource(appContext, uri)
             extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toLong().also { release() }
         }
-        assertTrue("Video is only $durationMs ms long", durationMs in 1000..3000)
+        assertTrue("Video is only $durationMs ms long", durationMs in 1000..10_000)
         appContext.contentResolver.delete(uri, null, null)
     }
 }

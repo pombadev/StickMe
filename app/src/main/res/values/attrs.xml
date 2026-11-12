@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="StickerButton">
+        <attr name="stickerColor" format="color" />
+        <attr name="stickerBorder" format="color" />
+        <attr name="stickerShape" format="enum">
+            <enum name="circle" value="0" />
+            <enum name="rounded" value="1" />
+            <enum name="octagon" value="2" />
+            <enum name="torn" value="3" />
+            <enum name="star" value="4" />
+        </attr>
+        <attr name="stickerRadius" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="TapeView">
+        <attr name="tapeColor" format="color" />
+        <attr name="tapeLight" format="color" />
+    </declare-styleable>
+    <declare-styleable name="TornStrip">
+        <attr name="tornSide" format="enum">
+            <enum name="bottom" value="0" />
+            <enum name="right" value="1" />
+        </attr>
+    </declare-styleable>
+    <declare-styleable name="ChalkArt">
+        <attr name="chalkScene" format="enum">
+            <enum name="wake" value="0" />
+            <enum name="camera" value="1" />
+            <enum name="nobody" value="2" />
+            <enum name="results" value="3" />
+        </attr>
+    </declare-styleable>
+    <declare-styleable name="PaperCard">
+        <attr name="lineSpacing" format="dimension" />
+        <attr name="paperColor" format="color" />
+    </declare-styleable>
+</resources>

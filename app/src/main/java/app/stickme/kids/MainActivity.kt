@@ -2,8 +2,11 @@ package app.stickme.kids
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.RectF
+import android.graphics.drawable.GradientDrawable
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
@@ -11,17 +14,17 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
+import android.text.SpannableString
+import android.text.Spanned
 import android.util.Log
 import android.util.Size
-import android.util.TypedValue
-import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.widget.HorizontalScrollView
-import android.widget.LinearLayout
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -36,20 +39,38 @@ import androidx.core.content.ContextCompat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
 
+    // The screen. Rebuilt when the phone turns, because portrait and landscape have their own layouts.
+    private lateinit var root: FrameLayout
     private lateinit var cameraPicture: PreviewView
     private lateinit var skeletons: SkeletonView
-    private lateinit var hint: TextView
-    private lateinit var settingsPanel: View
-    private lateinit var speedInfo: TextView
+    private lateinit var nobody: View
+    private lateinit var logo: View
+    private lateinit var friendsText: TextView
+    private lateinit var tipNote: View
     private lateinit var recordingBadge: TextView
-    private lateinit var recordButton: View
-    private lateinit var facePicker: HorizontalScrollView
-    private lateinit var faceOptions: LinearLayout
-    private lateinit var gameMenu: View
-    private lateinit var gameOptions: android.widget.GridLayout
+    private lateinit var hint: TextView
+    private lateinit var cornerButtons: View
+    private lateinit var dock: View
+    private lateinit var recordDot: View
+    private lateinit var recordMiniDot: View
+    private lateinit var recordLabel: TextView
+    private lateinit var gameControls: View
+    private lateinit var gameHint: TextView
+    private lateinit var gateLinks: View
+    private lateinit var gateHint: View
+    private lateinit var playAnyway: View
+    private lateinit var stopGame: View
+    private lateinit var recordMini: View
+    private lateinit var cameraAsk: View
+    private lateinit var wakeScreen: View
+    private lateinit var gamesSheet: GamesSheet
+    private lateinit var looksSheet: LooksSheet
+    private lateinit var settingsFolder: SettingsFolder
+    private lateinit var results: ResultsScreen
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     @Volatile private var engine: PoseEngine? = null
@@ -61,51 +82,37 @@ class MainActivity : ComponentActivity() {
     private val ticker = Handler(Looper.getMainLooper())
     private val sounds = SoundBoard()
     private val funEngine = FunEngine(settings, GameKit(sounds, SavedScores(), speak = ::speak)) // camera thread only
+    private val prefs by lazy { getSharedPreferences("stickme", MODE_PRIVATE) }
 
     /** The phone's voice, for Simon Says. Null until the speech engine is ready. */
     @Volatile private var voice: TextToSpeech? = null
-
-    private fun startVoice() {
-        var engine: TextToSpeech? = null
-        engine = TextToSpeech(applicationContext) { status ->
-            val ready = engine ?: return@TextToSpeech
-            if (status != TextToSpeech.SUCCESS) return@TextToSpeech
-            // Simon's words are English; use the phone's English voice when it has one.
-            val english = ready.isLanguageAvailable(Locale.US) >= TextToSpeech.LANG_AVAILABLE
-            if (english) ready.language = Locale.US
-            voice = ready
-        }
-    }
-
-    private fun speak(words: String) {
-        if (sounds.muted) return
-        voice?.speak(words, TextToSpeech.QUEUE_FLUSH, null, "simon")
-    }
-
-    /** Best scores, kept between app launches. */
-    private inner class SavedScores : ScoreBook {
-        override fun best(game: GameKind) = prefs.getInt("best_${game.name}", 0)
-
-        override fun offer(game: GameKind, score: Int): Boolean {
-            if (score <= best(game)) return false
-            prefs.edit().putInt("best_${game.name}", score).apply()
-            return true
-        }
-    }
 
     private var useFrontCamera = false
     @Volatile private var cameraVisible = false
     private var analysis: ImageAnalysis? = null
     private var askedForRecordingPermissions = false
 
+    // Camera-thread bookkeeping for what the chrome around the picture shows.
+    @Volatile private var firstFrameSeen = false
     private var framesSinceReport = 0
     private var lastReportAt = SystemClock.elapsedRealtime()
     private var lastPersonSeenAt = SystemClock.elapsedRealtime()
-    private var hintShown = false // camera thread; false makes the next frame replace the "waking up" text
-    private val autoClosers = HashMap<View, Runnable>()
+    private var tipStartedAt = 0L
+    private var shownPeople = -1
+    private var shownTip = false
+    private var shownNobody = false
+    private var shownKey: Any? = null
 
     private val askForCamera = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startCamera() else hint.setText(R.string.need_camera)
+        if (granted) {
+            cameraAsk.visibility = View.GONE
+            setHint(null)
+            if (!firstFrameSeen) wakeScreen.visibility = View.VISIBLE
+            startCamera()
+        } else {
+            cameraAsk.visibility = View.GONE
+            setHint(R.string.need_camera) { showCameraAsk() }
+        }
     }
 
     private val askForRecordingPermissions =
@@ -119,116 +126,185 @@ class MainActivity : ComponentActivity() {
         override fun onDisplayRemoved(displayId: Int) = Unit
     }
 
+    /** Best scores, kept between app launches. */
+    private inner class SavedScores : ScoreBook {
+        override fun best(game: GameKind) = prefs.getInt("best_${game.name}", 0)
+
+        override fun offer(game: GameKind, score: Int): Boolean {
+            if (score <= best(game)) return false
+            prefs.edit().putInt("best_${game.name}", score).apply()
+            return true
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        cameraPicture = findViewById(R.id.cameraPicture)
-        skeletons = findViewById(R.id.skeletons)
-        hint = findViewById(R.id.hint)
-        recordingBadge = findViewById(R.id.recordingBadge)
-        recordButton = findViewById(R.id.record)
-        facePicker = findViewById(R.id.facePicker)
-        faceOptions = findViewById(R.id.faceOptions)
-        gameMenu = findViewById(R.id.gameMenu)
-        gameOptions = findViewById(R.id.gameOptions)
-        settingsPanel = findViewById(R.id.settingsPanel)
-        speedInfo = findViewById(R.id.speedInfo)
-        skeletons.settings = settings
-
-        findViewById<TextView>(R.id.showCamera).setOnClickListener {
-            cameraVisible = !cameraVisible
-            cameraPicture.animate().alpha(if (cameraVisible) CAMERA_ALPHA else 0f).setDuration(250).start()
-        }
-        findViewById<TextView>(R.id.changeLook).setOnClickListener {
-            settings.look = Look.entries[(settings.look.ordinal + 1) % Look.entries.size]
-            skeletons.invalidate()
-            showToast(LOOK_NAMES.getValue(settings.look))
-            updateBackgroundMusic()
-        }
-
-        val playGame = findViewById<TextView>(R.id.playGame)
-        playGame.setOnClickListener {
-            when {
-                funEngine.games.isRunning -> funEngine.games.requestStop()
-                gameMenu.visibility == View.VISIBLE -> hide(gameMenu)
-                else -> {
-                    hide(facePicker)
-                    showForAWhile(gameMenu, GAME_MENU_CLOSE_MS)
-                }
-            }
-        }
-        buildGameMenu()
-        startVoice()
+        sounds.muted = prefs.getBoolean(PREF_MUTED, false)
         funEngine.games.onChanged = { playing ->
             runOnUiThread {
-                playGame.text = if (playing != null) "⏹" else "🎯"
-                playGame.contentDescription = if (playing != null) "Stop the game" else "Choose a game"
-                if (playing != null) {
-                    hide(facePicker)
-                    hide(settingsPanel)
-                    hide(gameMenu)
-                }
+                if (playing != null) looksSheet.hide()
                 updateBackgroundMusic()
             }
         }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = goBack()
+        })
+        setUpScreen()
+        startVoice()
+        getSystemService(DisplayManager::class.java).registerDisplayListener(displayListener, null)
+        loadModel(savedModel())
+        if (hasPermission(Manifest.permission.CAMERA)) startCamera() else showCameraAsk()
+    }
 
-        findViewById<TextView>(R.id.flipCamera).setOnClickListener {
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        setUpScreen()
+        if (hasPermission(Manifest.permission.CAMERA)) startCamera()
+    }
+
+    /** Builds the screen and connects every button. Safe to call again after the phone turns. */
+    private fun setUpScreen() {
+        setContentView(R.layout.activity_main)
+        root = findViewById(R.id.root)
+        root.background = ChalkboardDrawable()
+        cameraPicture = findViewById(R.id.cameraPicture)
+        skeletons = findViewById(R.id.skeletons)
+        skeletons.settings = settings
+        nobody = findViewById(R.id.nobody)
+        logo = findViewById(R.id.logo)
+        friendsText = findViewById(R.id.friendsText)
+        tipNote = findViewById(R.id.tipNote)
+        recordingBadge = findViewById(R.id.recordingBadge)
+        hint = findViewById(R.id.hint)
+        cornerButtons = findViewById(R.id.cornerButtons)
+        dock = findViewById(R.id.dock)
+        recordDot = findViewById(R.id.recordDot)
+        recordMiniDot = findViewById(R.id.recordMiniDot)
+        recordLabel = findViewById(R.id.recordLabel)
+        gameControls = findViewById(R.id.gameControls)
+        gameHint = findViewById(R.id.gameHint)
+        gateLinks = findViewById(R.id.gateLinks)
+        gateHint = findViewById(R.id.gateHint)
+        playAnyway = findViewById(R.id.playAnyway)
+        stopGame = findViewById(R.id.stopGame)
+        recordMini = findViewById(R.id.recordMini)
+        cameraAsk = findViewById(R.id.cameraAsk)
+        wakeScreen = findViewById(R.id.wakeScreen)
+        wakeScreen.background = ChalkboardDrawable()
+        cameraAsk.background = ChalkboardDrawable()
+
+        tipNote.findViewById<TextView>(R.id.tipText).text = SpannableString(getString(R.string.hands_up_tip)).apply {
+            val start = indexOf("UP")
+            setSpan(FontSpan(Fonts.heading), start, start + 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+
+        gamesSheet = GamesSheet(findViewById(R.id.gamesSheet)) { kind -> funEngine.games.requestStart(kind) }
+        looksSheet = LooksSheet(
+            findViewById(R.id.looksSheet), settings,
+            onLookChanged = { skeletons.invalidate(); updateBackgroundMusic() },
+            onFaceChanged = { skeletons.invalidate() },
+        )
+        settingsFolder = SettingsFolder(
+            findViewById(R.id.settingsFolder),
+            onModel = { model ->
+                prefs.edit().putString(PREF_MODEL, model.name).apply()
+                if (engine?.model != model) loadModel(model)
+            },
+            onSound = { on ->
+                sounds.muted = !on
+                prefs.edit().putBoolean(PREF_MUTED, !on).apply()
+                updateBackgroundMusic()
+            },
+        )
+        settingsFolder.set(engine?.model ?: savedModel(), !sounds.muted)
+        results = ResultsScreen(
+            findViewById(R.id.resultsScreen),
+            onPlayAgain = { kind -> funEngine.games.requestStart(kind) },
+            onPickAnother = {
+                funEngine.games.requestStop()
+                gamesSheet.show()
+            },
+        )
+
+        findViewById<View>(R.id.showCamera).setOnClickListener {
+            cameraVisible = !cameraVisible
+            cameraPicture.animate().alpha(if (cameraVisible) CAMERA_ALPHA else 0f).setDuration(250).start()
+        }
+        findViewById<View>(R.id.pickFace).setOnClickListener { looksSheet.show() }
+        findViewById<View>(R.id.changeLook).setOnClickListener { looksSheet.show() }
+        findViewById<View>(R.id.playGame).setOnClickListener { gamesSheet.show() }
+        findViewById<View>(R.id.flipCamera).setOnClickListener {
             useFrontCamera = !useFrontCamera
             startCamera()
         }
-        findViewById<TextView>(R.id.pickFace).setOnClickListener {
-            if (facePicker.visibility == View.VISIBLE) hide(facePicker) else showForAWhile(facePicker)
+        findViewById<View>(R.id.openSettings).onLongHold(
+            holdMs = 2000,
+            onTooShort = { Toast.makeText(this, "Hold the lock for 2 seconds", Toast.LENGTH_SHORT).show() },
+            onHeld = { settingsFolder.show() },
+        )
+        findViewById<View>(R.id.record).setOnClickListener { toggleRecording() }
+        recordMini.setOnClickListener { toggleRecording() }
+        stopGame.setOnClickListener { funEngine.games.requestStop() }
+        findViewById<View>(R.id.backToGames).setOnClickListener {
+            funEngine.games.requestStop()
+            gamesSheet.show()
         }
-        findViewById<TextView>(R.id.openSettings).setOnClickListener {
-            if (settingsPanel.visibility == View.VISIBLE) hide(settingsPanel) else showForAWhile(settingsPanel)
-        }
-        recordButton.setOnClickListener {
-            if (videoRecorder.isRecording) stopRecording() else startRecordingAfterAsking()
-        }
-        buildFacePicker()
-
-        val toggleSound = findViewById<TextView>(R.id.toggleSound)
-        fun showSound() { toggleSound.text = if (sounds.muted) "🔇  Sounds off" else "🔊  Sounds on" }
-        sounds.muted = prefs.getBoolean(PREF_MUTED, false)
-        showSound()
-        toggleSound.setOnClickListener {
-            sounds.muted = !sounds.muted
-            prefs.edit().putBoolean(PREF_MUTED, sounds.muted).apply()
-            showSound()
-            showForAWhile(settingsPanel)
-            updateBackgroundMusic()
+        playAnyway.setOnClickListener { funEngine.games.requestSkipGate() }
+        findViewById<View>(R.id.allowCamera).setOnClickListener { askForCamera.launch(Manifest.permission.CAMERA) }
+        findViewById<View>(R.id.notNow).setOnClickListener {
+            cameraAsk.visibility = View.GONE
+            setHint(R.string.need_camera) { showCameraAsk() }
         }
 
-        val switchModel = findViewById<TextView>(R.id.switchModel)
-        val savedModel = savedModel()
-        switchModel.text = savedModel.label
-        switchModel.setOnClickListener {
-            val current = engine?.model ?: return@setOnClickListener // still loading
-            val next = PoseModel.entries[(current.ordinal + 1) % PoseModel.entries.size]
-            switchModel.text = next.label
-            prefs.edit().putString(PREF_MODEL, next.name).apply()
-            loadModel(next)
-            showForAWhile(settingsPanel)
-        }
-
-        getSystemService(DisplayManager::class.java).registerDisplayListener(displayListener, null)
-
-        loadModel(savedModel)
-
-        if (hasPermission(Manifest.permission.CAMERA)) startCamera() else askForCamera.launch(Manifest.permission.CAMERA)
+        // Pick up where things were, in case the phone just turned.
+        cameraPicture.alpha = if (cameraVisible) CAMERA_ALPHA else 0f
+        wakeScreen.visibility = if (firstFrameSeen) View.GONE else View.VISIBLE
+        showRecordingState(videoRecorder.isRecording)
+        shownKey = null
+        shownPeople = -1
+        shownTip = false
+        shownNobody = false
     }
 
-    private val prefs by lazy { getSharedPreferences("stickme", MODE_PRIVATE) }
+    private fun goBack() {
+        when {
+            results.isShown -> funEngine.games.requestStop()
+            settingsFolder.isShown -> settingsFolder.hide()
+            gamesSheet.isShown -> gamesSheet.hide()
+            looksSheet.isShown -> looksSheet.hide()
+            funEngine.games.isRunning -> funEngine.games.requestStop()
+            else -> finish()
+        }
+    }
+
+    // ---- hints and the camera question --------------------------------------------------------
+
+    private fun setHint(text: Int?, onTap: (() -> Unit)? = null) {
+        if (text == null) {
+            hint.visibility = View.GONE
+            return
+        }
+        hint.setText(text)
+        hint.visibility = View.VISIBLE
+        hint.setOnClickListener { onTap?.invoke() }
+        hint.isClickable = onTap != null
+    }
+
+    private fun showCameraAsk() {
+        wakeScreen.visibility = View.GONE
+        setHint(null)
+        cameraAsk.visibility = View.VISIBLE
+    }
+
+    // ---- the pose model ------------------------------------------------------------------------
 
     private fun savedModel(): PoseModel =
         PoseModel.entries.firstOrNull { it.name == prefs.getString(PREF_MODEL, null) } ?: PoseModel.TINY
 
     /** Runs on the camera thread, so no frame is ever analysed with a half-loaded or closed model. */
     private fun loadModel(model: PoseModel) {
-        hint.setText(R.string.loading)
-        hint.visibility = View.VISIBLE
+        if (firstFrameSeen) setHint(R.string.loading)
         worker.execute {
             val old = engine
             engine = null
@@ -236,7 +312,7 @@ class MainActivity : ComponentActivity() {
             try {
                 engine = PoseEngine(applicationContext, model)
                 smoother.reset()
-                hintShown = false
+                runOnUiThread { if (hint.text == getString(R.string.loading)) setHint(null) }
             } catch (e: Exception) {
                 Log.e(TAG, "Could not load the pose models", e)
                 runOnUiThread { Toast.makeText(this, "Could not load models: ${e.message}", Toast.LENGTH_LONG).show() }
@@ -244,40 +320,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun buildFacePicker() {
-        val size = dp(56)
-        val gap = dp(5)
-        FaceCatalog.all.forEach { style ->
-            val option = TextView(this).apply {
-                text = style.button
-                gravity = Gravity.CENTER
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
-                setOnClickListener { button ->
-                    settings.face = style
-                    highlightChosenFace()
-                    skeletons.invalidate()
-                    if (style == FaceStyle.Mix) {
-                        // Stay open so kids can keep rolling the dice.
-                        FaceCatalog.rollNewMix()
-                        button.animate().rotationBy(360f).setDuration(350).start()
-                        showForAWhile(facePicker)
-                    } else {
-                        hide(facePicker)
-                    }
-                }
-            }
-            faceOptions.addView(option, LinearLayout.LayoutParams(size, size).apply { setMargins(gap, 0, gap, 0) })
-        }
-        highlightChosenFace()
-    }
-
-    private fun highlightChosenFace() {
-        FaceCatalog.all.forEachIndexed { i, style ->
-            faceOptions.getChildAt(i).setBackgroundResource(
-                if (style == settings.face) R.drawable.face_option_selected else R.drawable.round_button,
-            )
-        }
-    }
+    // ---- the camera ----------------------------------------------------------------------------
 
     private fun startCamera() {
         val providerFuture = ProcessCameraProvider.getInstance(this)
@@ -313,8 +356,8 @@ class MainActivity : ComponentActivity() {
                 analysis = newAnalysis
             } catch (e: Exception) {
                 Log.e(TAG, "Camera failed to start", e)
-                hint.text = "Camera failed to start: ${e.message}"
-                hint.visibility = View.VISIBLE
+                wakeScreen.visibility = View.GONE
+                setHint(R.string.camera_failed) { setHint(null); startCamera() }
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -324,7 +367,8 @@ class MainActivity : ComponentActivity() {
             val currentEngine = engine ?: return
             val upright = image.toBitmap().rotated(image.imageInfo.rotationDegrees)
             val people = smoother.smooth(currentEngine.findPeople(upright))
-            val extras = funEngine.update(people, SystemClock.uptimeMillis(), upright.width, upright.height)
+            val now = SystemClock.uptimeMillis()
+            val extras = funEngine.update(people, now, upright.width, upright.height, visibleRegion(upright.width, upright.height))
             val frame = SceneFrame(people, upright, upright.width, upright.height, mirrored, extras)
             skeletons.show(frame)
             if (videoRecorder.isRecording) {
@@ -333,8 +377,87 @@ class MainActivity : ComponentActivity() {
                     videoPainter.drawScene(canvas, videoRecorder.width, videoRecorder.height, frame, pictureAlpha)
                 }
             }
-            reportSpeed(people.size)
+            updateChrome(people.size, extras.game, now)
         }
+    }
+
+    /** The part of the camera picture that shows on screen (the picture is cropped to fill the screen), in picture pixels. */
+    private fun visibleRegion(imageWidth: Int, imageHeight: Int): RectF? {
+        val viewWidth = skeletons.width
+        val viewHeight = skeletons.height
+        if (viewWidth == 0 || viewHeight == 0) return null
+        val scale = max(viewWidth / imageWidth.toFloat(), viewHeight / imageHeight.toFloat())
+        val w = viewWidth / scale
+        val h = viewHeight / scale
+        return RectF((imageWidth - w) / 2, (imageHeight - h) / 2, (imageWidth + w) / 2, (imageHeight + h) / 2)
+    }
+
+    /** Camera thread: works out what the chrome should show, and tells the screen only when something changed. */
+    private fun updateChrome(people: Int, game: GameScene?, now: Long) {
+        if (!firstFrameSeen) {
+            firstFrameSeen = true
+            runOnUiThread { wakeScreen.animate().alpha(0f).setDuration(250).withEndAction { wakeScreen.visibility = View.GONE; wakeScreen.alpha = 1f }.start() }
+        }
+        if (people > 0) lastPersonSeenAt = now
+        val gameOn = game != null
+        val nobodyHere = people == 0 && now - lastPersonSeenAt > NOBODY_DELAY_MS && !gameOn
+        if (people > 0 && tipStartedAt == 0L) tipStartedAt = now
+        val tip = people > 0 && !gameOn && now - tipStartedAt < TIP_MS
+        val friends = if (gameOn) 0 else people
+
+        if (friends != shownPeople || tip != shownTip || nobodyHere != shownNobody) {
+            shownPeople = friends
+            shownTip = tip
+            shownNobody = nobodyHere
+            runOnUiThread {
+                friendsText.visibility = if (friends > 0) View.VISIBLE else View.GONE
+                friendsText.text = if (friends == 1) "1 friend here!" else "$friends friends here!"
+                tipNote.visibility = if (tip) View.VISIBLE else View.GONE
+                nobody.visibility = if (nobodyHere) View.VISIBLE else View.GONE
+            }
+        }
+
+        val key = listOf(game?.mode, game?.canSkip, game?.hint, game?.result)
+        if (key != shownKey) {
+            shownKey = key
+            runOnUiThread { showGameState(game) }
+        }
+
+        framesSinceReport++
+        val elapsed = now - lastReportAt
+        if (elapsed >= 1000) {
+            val fps = Math.round(framesSinceReport * 1000f / elapsed)
+            framesSinceReport = 0
+            lastReportAt = now
+            runOnUiThread { settingsFolder.setSpeed(fps) }
+        }
+    }
+
+    /** Swaps the dock for the game controls (and back), and shows the results screen. */
+    private fun showGameState(game: GameScene?) {
+        val mode = game?.mode
+        val playing = game != null
+        dock.visibility = if (playing) View.GONE else View.VISIBLE
+        cornerButtons.visibility = if (playing) View.GONE else View.VISIBLE
+        logo.visibility = if (playing) View.GONE else View.VISIBLE
+        gameControls.visibility = if (playing && mode != SceneMode.RESULT) View.VISIBLE else View.GONE
+        val inPlay = mode == SceneMode.PLAY
+        stopGame.visibility = if (inPlay) View.VISIBLE else View.GONE
+        recordMini.visibility = if (inPlay) View.VISIBLE else View.GONE
+        gameHint.visibility = if (inPlay) View.VISIBLE else View.GONE
+        gameHint.text = game?.hint.orEmpty()
+        gateLinks.visibility = if (mode == SceneMode.FIT || mode == SceneMode.PICK) View.VISIBLE else View.GONE
+        gateHint.visibility = if (mode == SceneMode.PICK) View.VISIBLE else View.GONE
+        playAnyway.visibility = if (mode == SceneMode.FIT && game?.canSkip == true) View.VISIBLE else View.GONE
+        val info = game?.result
+        if (mode == SceneMode.RESULT && info != null) results.show(info) else results.hide()
+        updateBackgroundMusic()
+    }
+
+    // ---- recording -----------------------------------------------------------------------------
+
+    private fun toggleRecording() {
+        if (videoRecorder.isRecording) stopRecording() else startRecordingAfterAsking()
     }
 
     private fun startRecordingAfterAsking() {
@@ -364,9 +487,7 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "Couldn't start recording: ${e.message}", Toast.LENGTH_LONG).show()
             return
         }
-        recordButton.setBackgroundResource(R.drawable.stop_button)
-        recordButton.contentDescription = "Stop recording"
-        recordingBadge.visibility = View.VISIBLE
+        showRecordingState(true)
         ticker.post(updateRecordingBadge)
     }
 
@@ -381,9 +502,7 @@ class MainActivity : ComponentActivity() {
 
     private fun stopRecording() {
         ticker.removeCallbacks(updateRecordingBadge)
-        recordButton.setBackgroundResource(R.drawable.record_button)
-        recordButton.contentDescription = "Record a video"
-        recordingBadge.visibility = View.GONE
+        showRecordingState(false)
         // Stopping runs on the camera thread so it can never cut a frame in half.
         worker.execute {
             val message = when (val result = videoRecorder.stopAndSave()) {
@@ -395,75 +514,50 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Camera thread: keeps the speed in the settings panel and shows the hint only while nobody is in view. */
-    private fun reportSpeed(peopleCount: Int) {
-        val now = SystemClock.elapsedRealtime()
-        if (peopleCount > 0) lastPersonSeenAt = now
-        // During the game the card already says what to do, so the hint would only get in its way.
-        val showHint = now - lastPersonSeenAt > NOBODY_HINT_DELAY_MS && !funEngine.games.isRunning
-        if (showHint != hintShown) {
-            hintShown = showHint
-            runOnUiThread {
-                hint.setText(R.string.point_at_someone)
-                hint.visibility = if (showHint) View.VISIBLE else View.GONE
+    /** The record sticker shows a round dot, or a square while recording. */
+    private fun showRecordingState(on: Boolean) {
+        for (dot in listOf(recordDot, recordMiniDot)) {
+            dot.background = GradientDrawable().apply {
+                shape = if (on) GradientDrawable.RECTANGLE else GradientDrawable.OVAL
+                cornerRadius = 6f * resources.displayMetrics.density
+                setColor(Paper.PAPER_LIGHT)
             }
+            val size = ((if (on) 24 else if (dot === recordDot) 30 else 24) * resources.displayMetrics.density).toInt()
+            dot.layoutParams = (dot.layoutParams as FrameLayout.LayoutParams).apply { width = size; height = size }
         }
-
-        framesSinceReport++
-        val elapsed = now - lastReportAt
-        if (elapsed < 1000) return
-        val fps = framesSinceReport * 1000f / elapsed
-        framesSinceReport = 0
-        lastReportAt = now
-        runOnUiThread { speedInfo.text = "Speed: %.0f pictures a second".format(fps) }
+        recordLabel.text = if (on) "stop" else "record"
+        recordingBadge.visibility = if (on) View.VISIBLE else View.GONE
+        val description = if (on) "Stop recording" else "Record a video"
+        findViewById<View>(R.id.record).contentDescription = description
+        recordMini.contentDescription = description
     }
 
-    /** Opens a pop-up row or panel and closes it again if nobody touches it for a few seconds. */
-    private fun showForAWhile(view: View, closeAfterMs: Long = AUTO_CLOSE_MS) {
-        view.visibility = View.VISIBLE
-        val closer = autoClosers.getOrPut(view) { Runnable { hide(view) } }
-        ticker.removeCallbacks(closer)
-        ticker.postDelayed(closer, closeAfterMs)
-    }
+    // ---- sound and voice -----------------------------------------------------------------------
 
-    /** A grid of big game pictures with short names; tapping one starts that game. */
-    private fun buildGameMenu() {
-        val size = dp(76)
-        for (kind in GameKind.entries) {
-            val item = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                setBackgroundResource(R.drawable.round_button)
-                contentDescription = kind.label
-                setOnClickListener {
-                    hide(gameMenu)
-                    funEngine.games.requestStart(kind)
-                }
-                addView(TextView(context).apply {
-                    text = kind.emoji
-                    gravity = Gravity.CENTER
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
-                })
-                addView(TextView(context).apply {
-                    text = kind.label
-                    gravity = Gravity.CENTER
-                    setTextColor(android.graphics.Color.WHITE)
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
-                    maxLines = 1
-                })
-            }
-            gameOptions.addView(item, android.widget.GridLayout.LayoutParams().apply {
-                width = size
-                height = size
-                setMargins(dp(5), dp(5), dp(5), dp(5))
-            })
+    private fun startVoice() {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(applicationContext) { status ->
+            val ready = engine ?: return@TextToSpeech
+            if (status != TextToSpeech.SUCCESS) return@TextToSpeech
+            // Simon's words are English; use the phone's English voice when it has one.
+            val english = ready.isLanguageAvailable(Locale.US) >= TextToSpeech.LANG_AVAILABLE
+            if (english) ready.language = Locale.US
+            voice = ready
         }
     }
 
-    private fun hide(view: View) {
-        autoClosers[view]?.let(ticker::removeCallbacks)
-        view.visibility = View.GONE
+    private fun speak(words: String) {
+        if (sounds.muted) return
+        voice?.speak(words, TextToSpeech.QUEUE_FLUSH, null, "simon")
     }
+
+    /** The music box plays with the ballerina look; games pick their own music, so leave it to them. */
+    private fun updateBackgroundMusic() {
+        if (funEngine.games.isRunning) return
+        if (settings.look == Look.BALLERINA) sounds.startLoop(Sound.MUSIC_BOX_LOOP) else sounds.stopLoop()
+    }
+
+    // ---- life cycle ----------------------------------------------------------------------------
 
     override fun onResume() {
         super.onResume()
@@ -474,12 +568,6 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         if (videoRecorder.isRecording) stopRecording()
         sounds.stopLoop()
-    }
-
-    /** The music box plays with the ballerina look; games pick their own music, so leave it to them. */
-    private fun updateBackgroundMusic() {
-        if (funEngine.games.isRunning) return
-        if (settings.look == Look.BALLERINA) sounds.startLoop(Sound.MUSIC_BOX_LOOP) else sounds.stopLoop()
     }
 
     override fun onDestroy() {
@@ -497,25 +585,13 @@ class MainActivity : ComponentActivity() {
     private fun hasPermission(permission: String) =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun showToast(text: String) =Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
-
-    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-
     private companion object {
         const val TAG = "StickMe"
         const val CAMERA_ALPHA = 0.6f
         const val PREF_MODEL = "pose_model"
         const val PREF_MUTED = "sound_muted"
-        const val NOBODY_HINT_DELAY_MS = 1500L
-        const val AUTO_CLOSE_MS = 5000L
-        const val GAME_MENU_CLOSE_MS = 10_000L
-        val LOOK_NAMES = mapOf(
-            Look.NEON to "💡 Neon",
-            Look.RAINBOW to "🌈 Rainbow",
-            Look.SPARKLE to "✨ Sparkles — wave your hands!",
-            Look.ECHO to "👻 Echo — dance!",
-            Look.BALLERINA to "🩰 Ballerina — twirl and wave!",
-        )
+        const val NOBODY_DELAY_MS = 1500L
+        const val TIP_MS = 12_000L
     }
 }
 

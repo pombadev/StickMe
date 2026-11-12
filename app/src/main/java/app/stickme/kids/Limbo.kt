@@ -9,6 +9,8 @@ import android.graphics.Color
 class Limbo(kit: GameKit) : MiniGame(kit, GameKind.LIMBO) {
 
     override val howToPlay = "Duck under the bar!"
+    override val solo = true
+    override val scoreUnit = "levels"
 
     private enum class Phase { LOWERING, HOLD, CHEER, OUT }
 
@@ -82,8 +84,8 @@ class Limbo(kit: GameKit) : MiniGame(kit, GameKind.LIMBO) {
     override fun playScene(now: Long): GameScene {
         val ready = !standingHeadY.isNaN()
         val card = Card(
-            "Limbo", "🎋",
-            corner = "⭐ $score",
+            "Limbo",
+            tally = score, unit = scoreUnit,
             subtitle = when {
                 !ready -> "Stand in the picture!"
                 phase == Phase.LOWERING -> "Level ${score + 1}: get ready to duck…"
@@ -119,12 +121,6 @@ class Limbo(kit: GameKit) : MiniGame(kit, GameKind.LIMBO) {
             c.canvas.drawLine(i * stripe, y, (i + 1) * stripe, y, stroke)
         }
     }
-
-    override fun resultText() = "🎋 $score"
-
-    override fun resultSubtitle(newBest: Boolean) =
-        (if (score >= LEVELS) "Limbo champion! " else "You reached level $score! ") +
-            if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val LEVELS = 6

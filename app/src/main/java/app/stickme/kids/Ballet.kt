@@ -88,6 +88,8 @@ class SpinDetector {
 class BalletClass(kit: GameKit) : MiniGame(kit, GameKind.BALLET) {
 
     override val howToPlay = "Copy the ballet pose and hold it gracefully!"
+    override val solo = true
+    override val scoreUnit = "stars"
 
     private val poses = BalletPose.entries.shuffled(kit.random) + BalletPose.entries.shuffled(kit.random).take(2)
     private val meters = PerPerson { MovementMeter() }
@@ -173,19 +175,14 @@ class BalletClass(kit: GameKit) : MiniGame(kit, GameKind.BALLET) {
         val cheering = cheeringUntil != null
         val holding = holdStart != null && !cheering
         val card = Card(
-            pose.title, pose.emoji, pose.picture,
-            corner = "⭐ $score",
+            pose.title, pose.picture,
+            tally = score, unit = scoreUnit,
             subtitle = if (holding) "Hold it gracefully… 🩰" else "${round + 1} of ${poses.size}",
             timeLeft = if (cheering) null else (1 - (now - roundStart).toFloat() / ROUND_MS).coerceIn(0f, 1f),
             highlight = holding,
         )
         return GameScene(card, big)
     }
-
-    override fun resultText() = "🩰 $score"
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "You earned $score stars! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val ROUND_MS = 10_000L

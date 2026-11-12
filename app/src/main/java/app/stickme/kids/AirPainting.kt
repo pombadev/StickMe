@@ -11,6 +11,9 @@ import kotlin.math.hypot
 class AirPainting(kit: GameKit) : MiniGame(kit, GameKind.PAINT) {
 
     override val howToPlay = "Draw with your finger! Clap to clear."
+    override val solo = true
+    override val needs = Part.UPPER
+    override val scoreUnit = "points"
 
     /** One line of paint. Points are x,y pairs in image pixels. */
     private class Stroke(val color: Int, val width: Float) {
@@ -47,10 +50,10 @@ class AirPainting(kit: GameKit) : MiniGame(kit, GameKind.PAINT) {
         return true
     }
 
-    /** Only paint while the hand is lifted above the hips, so resting hands don't scribble. */
+    /** Only paint while the hand is lifted well above the hips, so resting hands don't scribble. */
     private fun handIsUp(body: Body, k: Int): Boolean {
         val hips = if (body.ok(11, 12)) (body.y(11) + body.y(12)) / 2 else return true
-        return body.y(k) < hips
+        return body.y(k) < hips - 0.25f * body.unit // clearly lifted: hands hanging at the sides must not scribble
     }
 
     private fun paint(body: Body, side: Int, x: Float, y: Float, now: Long) {
@@ -82,7 +85,7 @@ class AirPainting(kit: GameKit) : MiniGame(kit, GameKind.PAINT) {
 
     override fun playScene(now: Long): GameScene {
         val picture = strokes.map { FrozenStroke(it.color, it.width, it.points.toFloatArray()) }
-        val card = Card("Air Painting", "🖌️", subtitle = "Lift a finger to paint · clap to clear")
+        val card = Card("Air Painting", subtitle = "Lift a finger to paint · clap to clear")
         return GameScene(card, big, behind = { c -> picture.forEach { drawStroke(c, it) } })
     }
 

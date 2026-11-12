@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:layout_height="match_parent">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/cameraPicture"
@@ -18,176 +18,203 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Only shown when there is something to say: loading, or nobody in the picture. -->
+    <include layout="@layout/play_chrome" />
+
+    <!-- Top corner: switch camera, and the lock that opens settings (hold it). -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
-        android:layout_marginTop="76dp"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/loading"
-            android:textColor="#CCFFFFFF"
-            android:textSize="17sp" />
-
-        <TextView
-            android:id="@+id/recordingBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/recording_badge"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="4dp"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-    </LinearLayout>
-
-    <LinearLayout
+        android:id="@+id/cornerButtons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="12dp"
-        android:gravity="end"
-        android:orientation="vertical">
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="34dp"
+        android:orientation="horizontal">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+        <app.stickme.kids.StickerButton
+            android:id="@+id/flipCamera"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:contentDescription="Switch camera"
+            android:rotation="-6"
+            app:stickerColor="@color/blue"
+            app:stickerShape="circle">
 
-            <TextView
-                android:id="@+id/flipCamera"
-                style="@style/SmallButton"
-                android:contentDescription="Switch between front and back camera"
-                android:text="🔄" />
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_flip_camera" />
+        </app.stickme.kids.StickerButton>
 
-            <TextView
-                android:id="@+id/openSettings"
-                style="@style/SmallButton"
-                android:contentDescription="Settings for grown-ups"
-                android:text="⚙️" />
-        </LinearLayout>
+        <app.stickme.kids.StickerButton
+            android:id="@+id/openSettings"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="12dp"
+            android:contentDescription="Grown-up settings, press and hold"
+            android:rotation="5"
+            app:stickerColor="@color/chalk"
+            app:stickerShape="circle">
 
-        <LinearLayout
-            android:id="@+id/settingsPanel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/recording_badge"
-            android:backgroundTint="#E6222222"
-            android:orientation="vertical"
-            android:padding="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/switchModel"
-                style="@style/SettingsRow"
-                android:contentDescription="Switch between the fast and the detailed model" />
-
-            <TextView
-                android:id="@+id/toggleSound"
-                style="@style/SettingsRow"
-                android:contentDescription="Turn sounds on or off" />
-
-            <TextView
-                android:id="@+id/speedInfo"
-                style="@style/SettingsRow"
-                android:clickable="false"
-                android:textColor="#99FFFFFF"
-                android:textSize="13sp" />
-        </LinearLayout>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_lock" />
+        </app.stickme.kids.StickerButton>
     </LinearLayout>
 
-    <LinearLayout
+    <!-- The dock: five stickers on a strip of torn cardboard. -->
+    <FrameLayout
+        android:id="@+id/dock"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="170dp"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="28dp"
-        android:orientation="vertical">
+        android:clipChildren="false">
 
-        <FrameLayout
-            android:id="@+id/gameMenu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/recording_badge"
-            android:backgroundTint="#E6222222"
-            android:padding="8dp"
-            android:visibility="gone">
+        <app.stickme.kids.TornStripView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-            <GridLayout
-                android:id="@+id/gameOptions"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:columnCount="4" />
-        </FrameLayout>
-
-        <HorizontalScrollView
-            android:id="@+id/facePicker"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:clipToPadding="false"
-            android:paddingHorizontal="12dp"
-            android:scrollbars="none"
-            android:visibility="gone">
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="34dp"
+            android:clipChildren="false"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp">
 
-            <LinearLayout
-                android:id="@+id/faceOptions"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
+            <LinearLayout style="@style/DockCell">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/showCamera"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:contentDescription="Show camera picture"
+                    android:rotation="-5"
+                    app:stickerColor="@color/chalk"
+                    app:stickerRadius="16dp"
+                    app:stickerShape="rounded">
 
-            <TextView
-                android:id="@+id/showCamera"
-                style="@style/BigButton"
-                android:contentDescription="Show or hide the camera picture"
-                android:text="👀" />
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_eye" />
+                </app.stickme.kids.StickerButton>
 
-            <TextView
-                android:id="@+id/pickFace"
-                style="@style/BigButton"
-                android:contentDescription="Choose a face"
-                android:text="🙂" />
+                <TextView
+                    style="@style/DockLabel"
+                    android:text="camera" />
+            </LinearLayout>
 
-            <View
-                android:id="@+id/record"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginHorizontal="8dp"
-                android:background="@drawable/record_button"
-                android:clickable="true"
-                android:contentDescription="Record a video"
-                android:focusable="true" />
+            <LinearLayout style="@style/DockCell">
 
-            <TextView
-                android:id="@+id/changeLook"
-                style="@style/BigButton"
-                android:contentDescription="Change colors"
-                android:text="🎨" />
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/pickFace"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:contentDescription="Choose a face"
+                    android:rotation="4"
+                    app:stickerColor="@color/pink"
+                    app:stickerShape="circle">
 
-            <TextView
-                android:id="@+id/playGame"
-                style="@style/BigButton"
-                android:contentDescription="Choose a game"
-                android:text="🎯" />
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_face" />
+                </app.stickme.kids.StickerButton>
+
+                <TextView
+                    style="@style/DockLabel"
+                    android:text="face" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/DockCell">
+
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/record"
+                    android:layout_width="82dp"
+                    android:layout_height="82dp"
+                    android:layout_marginTop="-26dp"
+                    android:contentDescription="Record a video"
+                    android:rotation="-3"
+                    app:stickerColor="@color/red"
+                    app:stickerShape="circle">
+
+                    <View
+                        android:id="@+id/recordDot"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center" />
+                </app.stickme.kids.StickerButton>
+
+                <TextView
+                    android:id="@+id/recordLabel"
+                    style="@style/DockLabel"
+                    android:text="record" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/DockCell">
+
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/changeLook"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:contentDescription="Change look"
+                    android:rotation="6"
+                    app:stickerColor="@color/mint"
+                    app:stickerRadius="16dp"
+                    app:stickerShape="rounded">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_look" />
+                </app.stickme.kids.StickerButton>
+
+                <TextView
+                    style="@style/DockLabel"
+                    android:text="look" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/DockCell">
+
+                <app.stickme.kids.StickerButton
+                    android:id="@+id/playGame"
+                    android:layout_width="54dp"
+                    android:layout_height="54dp"
+                    android:contentDescription="Play a game"
+                    android:rotation="-4"
+                    app:stickerColor="@color/yellow"
+                    app:stickerRadius="16dp"
+                    app:stickerShape="rounded">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_star" />
+                </app.stickme.kids.StickerButton>
+
+                <TextView
+                    style="@style/DockLabel"
+                    android:text="games" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </FrameLayout>
+
+    <include layout="@layout/game_controls" />
+
+    <include layout="@layout/overlays" />
 </FrameLayout>

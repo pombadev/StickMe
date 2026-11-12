@@ -59,16 +59,16 @@ object Skeleton {
     fun isJoint(index: Int) = index < FACE || index >= LEFT_HAND
 
     private val fingerColors = intArrayOf(
-        Color.rgb(255, 64, 64), Color.rgb(255, 170, 0), Color.rgb(255, 255, 60),
-        Color.rgb(60, 255, 120), Color.rgb(80, 160, 255),
+        Paper.PINK, Paper.PEACH, Paper.YELLOW, Paper.MINT, Paper.BLUE,
     )
 
+    /** The chalk colours: mint down the left, blue down the right, a peach body and a pink belt. */
     fun neonColor(bone: Bone): Int = when (bone.part) {
-        Part.LEFT, Part.HEAD -> Color.rgb(57, 255, 20)
-        Part.RIGHT -> Color.rgb(30, 144, 255)
-        Part.TORSO -> Color.rgb(255, 165, 0)
-        Part.HIPS -> Color.rgb(255, 46, 154)
-        Part.FACE -> Color.WHITE
+        Part.LEFT, Part.HEAD -> Paper.MINT
+        Part.RIGHT -> Paper.BLUE
+        Part.TORSO -> Paper.PEACH
+        Part.HIPS -> Paper.PINK
+        Part.FACE -> Paper.CHALK
         Part.FINGER -> fingerColors[bone.shade]
     }
 }

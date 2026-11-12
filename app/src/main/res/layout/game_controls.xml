@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown instead of the dock while a game is on. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <FrameLayout
+        android:id="@+id/gameControls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <app.stickme.kids.StickerButton
+            android:id="@+id/stopGame"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginBottom="36dp"
+            android:layout_marginStart="22dp"
+            android:contentDescription="Stop game"
+            android:rotation="-6"
+            app:stickerColor="@color/red"
+            app:stickerShape="octagon">
+
+            <TextView
+                style="@style/Heading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="STOP"
+                android:textColor="@android:color/white"
+                android:textSize="26sp" />
+        </app.stickme.kids.StickerButton>
+
+        <TextView
+            android:id="@+id/gameHint"
+            style="@style/Chalk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="72dp"
+            android:rotation="-3"
+            android:textColor="@color/chalk_dim"
+            android:textSize="22sp" />
+
+        <app.stickme.kids.StickerButton
+            android:id="@+id/recordMini"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="36dp"
+            android:layout_marginEnd="22dp"
+            android:contentDescription="Record a video"
+            android:rotation="4"
+            app:stickerColor="@color/red"
+            app:stickerShape="circle">
+
+            <View
+                android:id="@+id/recordMiniDot"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center" />
+        </app.stickme.kids.StickerButton>
+
+        <LinearLayout
+            android:id="@+id/gateLinks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="30dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/gateHint"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="wrong person? swap places and try again"
+                android:textColor="@color/chalk_dim"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/playAnyway"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:minHeight="44dp"
+                android:paddingHorizontal="16dp"
+                android:text="play anyway"
+                android:textColor="@color/yellow"
+                android:textSize="22sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/backToGames"
+                style="@style/Chalk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:minHeight="44dp"
+                android:paddingHorizontal="16dp"
+                android:text="back to games"
+                android:textSize="22sp" />
+        </LinearLayout>
+    </FrameLayout>
+</merge>

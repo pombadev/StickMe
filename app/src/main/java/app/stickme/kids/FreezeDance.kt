@@ -9,6 +9,7 @@ import android.graphics.Color
 class FreezeDance(kit: GameKit) : MiniGame(kit, GameKind.FREEZE) {
 
     override val howToPlay = "Dance! When the music stops, FREEZE!"
+    override val scoreUnit = "freezes"
 
     private val meters = PerPerson { MovementMeter() }
     private val caught = HashSet<Int>()
@@ -72,15 +73,13 @@ class FreezeDance(kit: GameKit) : MiniGame(kit, GameKind.FREEZE) {
 
     override fun playScene(now: Long): GameScene {
         val card = Card(
-            "Freeze Dance", if (dancing) "💃" else "🧊",
-            corner = "⭐ $score",
+            "Freeze Dance", 
+            tally = score, unit = scoreUnit,
             subtitle = if (dancing) "Dance, dance, dance!" else "Don't move a bit!",
             highlight = !dancing,
         )
-        return GameScene(card, big)
+        return GameScene(card, big, hint = if (dancing) "keep dancing!" else "hold still...")
     }
-
-    override fun resultSubtitle(newBest: Boolean) = "$score of $ROUNDS great freezes" + if (newBest) " 🏆" else ""
 
     private companion object {
         const val ROUNDS = 6

@@ -27,10 +27,12 @@ class GamesTest {
     private fun step(vararg people: Person, ms: Long = 100): FunSnapshot =
         fx.update(people.toList(), now, 480, 640).also { now += ms }
 
-    /** Starts [kind] and waits out the 3-2-1 countdown. */
+    /** Starts [kind] with one person standing in view, and waits out the get-ready check and the 3-2-1 countdown. */
     private inline fun <reified G : MiniGame> start(kind: GameKind): G {
         fx.games.requestStart(kind)
-        repeat(30) { step(standing()) }
+        var guard = 0
+        while (fx.games.activeGame?.isPlaying != true && guard++ < 200) step(standing())
+        check(fx.games.activeGame?.isPlaying == true) { "The game never got past get-ready" } // fail fast instead of hanging
         return fx.games.activeGame as G
     }
 
@@ -94,7 +96,7 @@ class GamesTest {
         val game = start<Limbo>(GameKind.LIMBO)
         repeat(80) { step(standing()) }
         assertEquals(0, game.score)
-        assertEquals("You did it!", step(standing()).game?.card?.title)
+        assertEquals(SceneMode.RESULT, step(standing()).game?.mode)
     }
 
     @Test
@@ -200,11 +202,13 @@ class GamesTest {
 
     @Test
     fun mirrorMeGivesTwoPerfectCopiersEveryStar() {
-        val game = start<MirrorMe>(GameKind.MIRROR)
-        while (fx.games.isRunning && game.score < 18) {
+        fx.games.requestStart(GameKind.MIRROR) // needs two people in view before it starts
+        step(standing(id = 1, shift = -110f), standing(id = 2, shift = 110f)) // the game is created on the first frame
+        var guard = 0
+        while (fx.games.isRunning && (fx.games.activeGame as MirrorMe).score < 18 && guard++ < 1500) {
             step(standing(id = 1, shift = -110f), standing(id = 2, shift = 110f))
         }
-        assertEquals(18, game.score) // 6 rounds x 3 stars
+        assertEquals(18, (fx.games.activeGame as MirrorMe).score) // 6 rounds x 3 stars
     }
 
     private fun poseFor(target: PoseTarget): Person = when (target) {
@@ -220,13 +224,13 @@ class GamesTest {
     @Test
     fun simonSaysRewardsOnlyDoingWhatSimonSays() {
         val game = start<SimonSays>(GameKind.SIMON)
-        var finalScore = 0
-        while (fx.games.isRunning) {
+        var scene: GameScene? = null
+        var guard = 0
+        while (scene?.mode != SceneMode.RESULT && guard++ < 3000) {
             val obey = game.isSimonSaying && !game.isCheering
-            step(if (obey) poseFor(game.currentCommand) else standing())
-            finalScore = game.score
+            scene = step(if (obey) poseFor(game.currentCommand) else standing()).game
         }
-        assertEquals(10, finalScore)
+        assertEquals(10, scene?.result?.score)
         assertEquals(3, game.hearts)
         assertTrue("the phone should speak", said.any { it.startsWith("Simon says, ") })
         assertTrue("there should be trick rounds", said.any { !it.startsWith("Simon says") })
@@ -235,7 +239,8 @@ class GamesTest {
     @Test
     fun simonSaysTakesAHeartWhenYouFallForATrick() {
         val game = start<SimonSays>(GameKind.SIMON)
-        while (fx.games.isRunning && game.hearts == 3) {
+        var guard = 0
+        while (game.hearts == 3 && guard++ < 3000) {
             step(if (game.isCheering) standing() else poseFor(game.currentCommand))
         }
         assertEquals(2, game.hearts)

@@ -8,6 +8,8 @@ import kotlin.math.sin
 class BubblePop(kit: GameKit) : MiniGame(kit, GameKind.BUBBLES) {
 
     override val howToPlay = "Pop the bubbles with your hands!"
+    override val needs = Part.UPPER
+    override val scoreUnit = "pops"
 
     /** Moves on its own from [born], so it can be drawn at any moment. Image coordinates. */
     class Bubble(
@@ -76,7 +78,7 @@ class BubblePop(kit: GameKit) : MiniGame(kit, GameKind.BUBBLES) {
     override fun playScene(now: Long): GameScene {
         val floating = bubbles.toList()
         val card = Card(
-            "Bubble Pop", "🫧", corner = "⭐ $score",
+            "Bubble Pop", tally = score, unit = scoreUnit,
             timeLeft = (1 - (now - playStart).toFloat() / GAME_MS).coerceIn(0f, 1f),
         )
         return GameScene(card, big, front = { c -> floating.forEach { drawBubble(c, it) } })

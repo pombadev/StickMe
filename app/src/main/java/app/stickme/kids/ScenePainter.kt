@@ -43,7 +43,7 @@ class ScenePainter(private val settings: SceneSettings) {
         strokeCap = Paint.Cap.ROUND
     }
     private val line = Paint(glow)
-    private val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Color.WHITE }
+    private val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = Paper.CHALK }
     private val picturePaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val pictureMatrix = Matrix()
     private val effects = EffectsPainter()
@@ -55,7 +55,7 @@ class ScenePainter(private val settings: SceneSettings) {
         canvas: Canvas, width: Int, height: Int, frame: SceneFrame, pictureAlpha: Int,
         now: Long = SystemClock.uptimeMillis(),
     ) {
-        canvas.drawColor(Color.BLACK)
+        Chalkboard.draw(canvas, width, height)
         val picture = frame.picture
         if (picture != null && pictureAlpha > 0) {
             val fit = fitFor(width, height, frame)

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What sits on the chalkboard while playing: the logo, who is here, the tip note, and the "where are you" note. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <FrameLayout
+        android:id="@+id/nobody"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <app.stickme.kids.ChalkArtView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:chalkScene="nobody" />
+
+        <LinearLayout
+            android:layout_width="220dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="@dimen/nobody_note_top"
+            android:background="@color/yellow"
+            android:elevation="6dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="16dp"
+            android:paddingTop="22dp"
+            android:rotation="-3">
+
+            <TextView
+                style="@style/Heading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Where are you?"
+                android:textColor="@color/ink_warm"
+                android:textSize="30sp" />
+
+            <TextView
+                style="@style/Chalk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:text="Step in front of me and wave!"
+                android:textColor="@color/ink_warm"
+                android:textSize="22sp" />
+        </LinearLayout>
+
+        <app.stickme.kids.TapeView
+            android:layout_width="76dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="@dimen/nobody_note_top"
+            android:elevation="7dp"
+            android:translationY="-11dp"
+            app:tapeColor="@color/mint"
+            app:tapeLight="#BEFAE0" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="40dp"
+        android:orientation="horizontal"
+        android:rotation="-2">
+
+        <TextView
+            style="@style/Heading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stick"
+            android:textColor="@color/yellow"
+            android:textSize="30sp" />
+
+        <TextView
+            style="@style/Heading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:text="Me!"
+            android:textColor="@color/pink"
+            android:textSize="30sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/friendsText"
+        style="@style/Chalk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="26dp"
+        android:layout_marginTop="@dimen/friends_top"
+        android:rotation="-7"
+        android:textSize="34sp"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/tipNote"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="@dimen/tip_end"
+        android:layout_marginTop="@dimen/tip_top"
+        android:background="@color/yellow"
+        android:elevation="5dp"
+        android:rotation="4"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tipText"
+            style="@style/Chalk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingMultiplier="1.05"
+            android:padding="14dp"
+            android:paddingTop="22dp"
+            android:text="@string/hands_up_tip"
+            android:textColor="@color/ink_warm"
+            android:textSize="24sp" />
+
+        <app.stickme.kids.TapeView
+            android:layout_width="74dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|center_horizontal"
+            android:translationY="-11dp"
+            app:tapeColor="@color/pink"
+            app:tapeLight="#FFBEDA" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/recordingBadge"
+        style="@style/Heading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="100dp"
+        android:background="@color/red"
+        android:elevation="6dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        android:rotation="-2"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/hint"
+        style="@style/Chalk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:minHeight="48dp"
+        android:padding="12dp"
+        android:textSize="26sp"
+        android:visibility="gone" />
+</merge>

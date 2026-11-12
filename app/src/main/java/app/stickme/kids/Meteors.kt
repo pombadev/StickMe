@@ -7,6 +7,7 @@ import kotlin.math.hypot
 class Meteors(kit: GameKit) : MiniGame(kit, GameKind.METEORS) {
 
     override val howToPlay = "Dodge the falling meteors!"
+    override val scoreUnit = "dodged"
 
     /** Falls on its own from [born], so it can be drawn at any moment. Image coordinates. */
     class Meteor(
@@ -80,9 +81,9 @@ class Meteors(kit: GameKit) : MiniGame(kit, GameKind.METEORS) {
     override fun playScene(now: Long): GameScene {
         val falling = meteors.toList()
         val card = Card(
-            "Meteors", "☄️",
+            "Meteors",
             corner = "❤️".repeat(hearts.coerceAtLeast(0)),
-            subtitle = "Dodged: $score",
+            tally = score, unit = scoreUnit,
             timeLeft = (1 - (now - playStart).toFloat() / GAME_MS).coerceIn(0f, 1f),
             highlight = now < safeUntil,
         )
@@ -107,11 +108,6 @@ class Meteors(kit: GameKit) : MiniGame(kit, GameKind.METEORS) {
         fill.color = Color.rgb(121, 85, 72)
         c.canvas.drawCircle(x + r * 0.35f, y - r * 0.3f, r * 0.18f, fill)
     }
-
-    override fun resultText() = "☄️ $score"
-
-    override fun resultSubtitle(newBest: Boolean) =
-        "Dodged $score meteors! " + if (newBest) "New best! 🏆" else "Best: ${kit.scores.best(kind)}"
 
     private companion object {
         const val HEARTS = 3
