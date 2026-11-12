@@ -47,7 +47,7 @@ class ScenePainter(private val settings: SceneSettings) {
     private val picturePaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val pictureMatrix = Matrix()
     private val effects = EffectsPainter()
-    private val gameCard = GameHudPainter(effects)
+    private val gameTools = GameTools(effects)
 
     /** Full scene for a video frame: black, then the camera picture at [pictureAlpha] (0 hides it), then the rest. */
     fun drawScene(
@@ -74,7 +74,8 @@ class ScenePainter(private val settings: SceneSettings) {
         val rainbowShift = (now / 12 % 360).toFloat()
 
         val game = frame.extras.game
-        game?.let { gameCard.drawCard(canvas, width, height, it) }
+        val gameCanvas = game?.let { GameCanvas(canvas, width, height, fit, now, gameTools) }
+        gameCanvas?.let { game?.drawBehind(it) }
         if (look == Look.ECHO) drawEchoes(canvas, fit, frame.extras.echoes, rainbowShift)
 
         frame.people.forEachIndexed { personIndex, person ->
@@ -103,7 +104,7 @@ class ScenePainter(private val settings: SceneSettings) {
 
         effects.drawParticles(canvas, fit, frame.extras.particles, now)
         effects.drawPops(canvas, fit, frame.extras.pops, now)
-        game?.let { gameCard.drawBigText(canvas, width, height, it, now) }
+        gameCanvas?.let { game?.drawFront(it) }
     }
 
     /** Rainbow ghosts of where people were a moment ago, oldest faintest. */

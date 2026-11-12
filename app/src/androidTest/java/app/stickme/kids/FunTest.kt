@@ -22,7 +22,7 @@ class FunTest {
 
     private val sounds = SoundBoard().apply { muted = true }
     private val settings = SceneSettings()
-    private val fx = FunEngine(settings, sounds)
+    private val fx = FunEngine(settings, GameKit(sounds, random = kotlin.random.Random(1)))
     private var now = 10_000L
 
     @After
@@ -69,19 +69,19 @@ class FunTest {
 
     @Test
     fun aKidWhoCopiesEveryPoseWinsEveryStar() {
-        val finished = mutableListOf<Boolean>()
-        fx.game.onRunningChanged = { finished += !it }
-        fx.game.requestStart()
-        var lastCard: GameHud? = null
+        val changes = mutableListOf<GameKind?>()
+        fx.games.onChanged = { changes += it }
+        fx.games.requestStart(GameKind.COPY_ME)
+        var lastCard: Card? = null
         var nextPose = standing()
         repeat(1200) {
-            val card = step(nextPose).game ?: return@repeat
+            val card = step(nextPose).game?.card ?: return@repeat
             lastCard = card
             val target = PoseTarget.entries.firstOrNull { it.title == card.title }
             nextPose = target?.let(::poseFor) ?: standing()
         }
-        assertEquals("You got 7 of 7 poses", lastCard?.subtitle)
-        assertEquals(listOf(false, true), finished)
+        assertTrue(lastCard!!.subtitle, lastCard!!.subtitle.startsWith("You got 7 of 7 poses"))
+        assertEquals(listOf(GameKind.COPY_ME, null), changes)
     }
 
     @Test
@@ -119,9 +119,9 @@ class FunTest {
         }
 
         settings.look = Look.NEON
-        fx.game.requestStart()
+        fx.games.requestStart(GameKind.COPY_ME)
         repeat(40) { snapshot = step(standing()) }
-        val target = PoseTarget.entries.first { it.title == snapshot.game!!.title }
+        val target = PoseTarget.entries.first { it.title == snapshot.game!!.card!!.title }
         save("5_game_round", standing(), snapshot)
         repeat(7) { snapshot = step(poseFor(target)) }
         save("6_game_win", poseFor(target), snapshot)

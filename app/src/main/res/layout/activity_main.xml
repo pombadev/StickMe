@@ -113,6 +113,24 @@
         android:layout_marginBottom="28dp"
         android:orientation="vertical">
 
+        <FrameLayout
+            android:id="@+id/gameMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/recording_badge"
+            android:backgroundTint="#E6222222"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <GridLayout
+                android:id="@+id/gameOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:columnCount="4" />
+        </FrameLayout>
+
         <HorizontalScrollView
             android:id="@+id/facePicker"
             android:layout_width="match_parent"
@@ -168,7 +186,7 @@
             <TextView
                 android:id="@+id/playGame"
                 style="@style/BigButton"
-                android:contentDescription="Play the Copy me pose game"
+                android:contentDescription="Choose a game"
                 android:text="🎯" />
         </LinearLayout>
     </LinearLayout>

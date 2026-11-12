@@ -86,7 +86,7 @@ class FunSnapshot(
     val particles: List<Particle>,
     val pops: List<TextPop>,
     val echoes: List<List<Person>>,
-    val game: GameHud?,
+    val game: GameScene?,
 ) {
     fun isAnimating(now: Long) = game != null || particles.any { it.isAlive(now) } || pops.any { it.isAlive(now) }
 
@@ -97,12 +97,14 @@ class FunSnapshot(
 
 /**
  * Watches people move and answers with effects: hands up → confetti, clap → fireworks, jump → stars.
- * Also makes sparkle trails, remembers recent poses for the echo look, and runs the pose game.
+ * Also makes sparkle trails, remembers recent poses for the echo look, and runs the games
+ * (move reactions pause during a game so they don't get in its way).
  * Use from the camera thread only.
  */
-class FunEngine(private val settings: SceneSettings, private val sounds: SoundBoard) {
+class FunEngine(private val settings: SceneSettings, kit: GameKit) {
 
-    val game = PoseGame(sounds)
+    private val sounds = kit.sounds
+    val games = GameHost(kit)
 
     private val particles = ArrayList<Particle>()
     private val pops = ArrayList<TextPop>()
@@ -121,7 +123,11 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
         val trailPoints = HashMap<Int, Pair<Float, Float>>()
     }
 
+    private var lastUpdate = 0L
+
     fun update(people: List<Person>, now: Long, imageWidth: Int, imageHeight: Int): FunSnapshot {
+        val elapsed = if (lastUpdate == 0L) 0L else now - lastUpdate
+        lastUpdate = now
         particles.removeAll { !it.isAlive(now) }
         pops.removeAll { !it.isAlive(now) }
 
@@ -132,15 +138,15 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
         for (body in bodies) {
             val tracker = trackers.getOrPut(body.person.id) { MoveTracker() }
             tracker.lastSeen = now
-            reactToMoves(body, tracker, now)
+            if (!games.isRunning) reactToMoves(body, tracker, now)
             if (settings.look == Look.SPARKLE) leaveSparkles(body, tracker, now) else tracker.trailPoints.clear()
         }
         trackers.values.removeAll { now - it.lastSeen > 2000 }
 
-        game.update(bodies, now, this, imageWidth, imageHeight)
+        val game = games.update(Tick(bodies, now, elapsed, this, imageWidth, imageHeight))
 
         if (particles.size > MAX_PARTICLES) particles.subList(0, particles.size - MAX_PARTICLES).clear()
-        return FunSnapshot(particles.toList(), pops.toList(), echoes.toList(), game.hud(now))
+        return FunSnapshot(particles.toList(), pops.toList(), echoes.toList(), game)
     }
 
     private fun reactToMoves(body: Body, tracker: MoveTracker, now: Long) {
@@ -153,7 +159,7 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
                 tracker.lastHandsUp = now
                 val x = (body.x(Body.LEFT_WRIST) + body.x(Body.RIGHT_WRIST)) / 2
                 confettiBurst(x, headY - 0.6f * u, u, now)
-                pop("YAY!", x, headY - 0.9f * u, u, now)
+                pop("YAY!", x, headY - 0.9f * u, 0.55f * u, now)
                 sounds.play(Sound.YAY)
             }
             tracker.handsWereUp = handsUp
@@ -168,7 +174,7 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
                 val x = (body.x(Body.LEFT_WRIST) + body.x(Body.RIGHT_WRIST)) / 2
                 val y = (body.y(Body.LEFT_WRIST) + body.y(Body.RIGHT_WRIST)) / 2
                 fireworks(x, y, u, now)
-                pop("CLAP!", x, y - 0.5f * u, u, now)
+                pop("CLAP!", x, y - 0.5f * u, 0.55f * u, now)
                 sounds.play(Sound.POP)
             }
         }
@@ -182,7 +188,7 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
                 val feetX = (body.x(Body.LEFT_ANKLE) + body.x(Body.RIGHT_ANKLE)) / 2
                 val feetY = max(body.y(Body.LEFT_ANKLE), body.y(Body.RIGHT_ANKLE))
                 starBurst(feetX, feetY, u, now)
-                pop("BOING!", body.x(0).takeIf { body.ok(0) } ?: feetX, (headY ?: hipY) - 0.7f * u, u, now)
+                pop("BOING!", body.x(0).takeIf { body.ok(0) } ?: feetX, (headY ?: hipY) - 0.7f * u, 0.55f * u, now)
                 sounds.play(Sound.BOING)
             }
             // Follow slow changes (walking closer, squatting) but not the jump itself.
@@ -269,8 +275,20 @@ class FunEngine(private val settings: SceneSettings, private val sounds: SoundBo
         )
     }
 
-    private fun pop(text: String, x: Float, y: Float, u: Float, now: Long) {
-        pops += TextPop(text, x, y, 0.55f * u, brightColor(), now)
+    /** A comic word bouncing in at (x, y), [size] tall, all in image pixels. */
+    fun pop(text: String, x: Float, y: Float, size: Float, now: Long) {
+        pops += TextPop(text, x, y, size, brightColor(), now)
+    }
+
+    /** A small splash of sparks, for popping a bubble or a meteor hit. [size] is in image pixels. */
+    fun burst(x: Float, y: Float, size: Float, now: Long, color: Int) = repeat(24) { i ->
+        val angle = 2 * PI.toFloat() * i / 24 + random.nextFloat(-0.1f, 0.1f)
+        val speed = random.nextFloat(2.5f, 4.5f) * size
+        particles += Particle(
+            x, y, vx = cos(angle) * speed, vy = sin(angle) * speed, gravity = 2f * size,
+            born = now, lifeMs = random.nextLong(400, 700), size = random.nextFloat(0.12f, 0.22f) * size,
+            color = if (i % 4 == 0) Color.WHITE else color, shape = ParticleShape.SPARK, spin = 0f,
+        )
     }
 
     private fun brightColor() = Color.HSVToColor(floatArrayOf(random.nextFloat() * 360, 0.75f, 1f))

@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var recordButton: View
     private lateinit var facePicker: HorizontalScrollView
     private lateinit var faceOptions: LinearLayout
+    private lateinit var gameMenu: View
+    private lateinit var gameOptions: android.widget.GridLayout
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
     @Volatile private var engine: PoseEngine? = null
@@ -56,7 +58,18 @@ class MainActivity : ComponentActivity() {
     private val videoPainter = ScenePainter(settings)
     private val ticker = Handler(Looper.getMainLooper())
     private val sounds = SoundBoard()
-    private val funEngine = FunEngine(settings, sounds) // camera thread only
+    private val funEngine = FunEngine(settings, GameKit(sounds, SavedScores())) // camera thread only
+
+    /** Best scores, kept between app launches. */
+    private inner class SavedScores : ScoreBook {
+        override fun best(game: GameKind) = prefs.getInt("best_${game.name}", 0)
+
+        override fun offer(game: GameKind, score: Int): Boolean {
+            if (score <= best(game)) return false
+            prefs.edit().putInt("best_${game.name}", score).apply()
+            return true
+        }
+    }
 
     private var useFrontCamera = false
     @Volatile private var cameraVisible = false
@@ -96,6 +109,8 @@ class MainActivity : ComponentActivity() {
         recordButton = findViewById(R.id.record)
         facePicker = findViewById(R.id.facePicker)
         faceOptions = findViewById(R.id.faceOptions)
+        gameMenu = findViewById(R.id.gameMenu)
+        gameOptions = findViewById(R.id.gameOptions)
         settingsPanel = findViewById(R.id.settingsPanel)
         speedInfo = findViewById(R.id.speedInfo)
         skeletons.settings = settings
@@ -112,15 +127,24 @@ class MainActivity : ComponentActivity() {
 
         val playGame = findViewById<TextView>(R.id.playGame)
         playGame.setOnClickListener {
-            if (funEngine.game.isRunning) funEngine.game.requestStop() else funEngine.game.requestStart()
+            when {
+                funEngine.games.isRunning -> funEngine.games.requestStop()
+                gameMenu.visibility == View.VISIBLE -> hide(gameMenu)
+                else -> {
+                    hide(facePicker)
+                    showForAWhile(gameMenu, GAME_MENU_CLOSE_MS)
+                }
+            }
         }
-        funEngine.game.onRunningChanged = { running ->
+        buildGameMenu()
+        funEngine.games.onChanged = { playing ->
             runOnUiThread {
-                playGame.text = if (running) "⏹" else "🎯"
-                playGame.contentDescription = if (running) "Stop the game" else "Play the Copy me pose game"
-                if (running) {
+                playGame.text = if (playing != null) "⏹" else "🎯"
+                playGame.contentDescription = if (playing != null) "Stop the game" else "Choose a game"
+                if (playing != null) {
                     hide(facePicker)
                     hide(settingsPanel)
+                    hide(gameMenu)
                 }
             }
         }
@@ -350,7 +374,7 @@ class MainActivity : ComponentActivity() {
         val now = SystemClock.elapsedRealtime()
         if (peopleCount > 0) lastPersonSeenAt = now
         // During the game the card already says what to do, so the hint would only get in its way.
-        val showHint = now - lastPersonSeenAt > NOBODY_HINT_DELAY_MS && !funEngine.game.isRunning
+        val showHint = now - lastPersonSeenAt > NOBODY_HINT_DELAY_MS && !funEngine.games.isRunning
         if (showHint != hintShown) {
             hintShown = showHint
             runOnUiThread {
@@ -369,11 +393,45 @@ class MainActivity : ComponentActivity() {
     }
 
     /** Opens a pop-up row or panel and closes it again if nobody touches it for a few seconds. */
-    private fun showForAWhile(view: View) {
+    private fun showForAWhile(view: View, closeAfterMs: Long = AUTO_CLOSE_MS) {
         view.visibility = View.VISIBLE
         val closer = autoClosers.getOrPut(view) { Runnable { hide(view) } }
         ticker.removeCallbacks(closer)
-        ticker.postDelayed(closer, AUTO_CLOSE_MS)
+        ticker.postDelayed(closer, closeAfterMs)
+    }
+
+    /** A grid of big game pictures with short names; tapping one starts that game. */
+    private fun buildGameMenu() {
+        val size = dp(76)
+        for (kind in GameKind.entries) {
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setBackgroundResource(R.drawable.round_button)
+                contentDescription = kind.label
+                setOnClickListener {
+                    hide(gameMenu)
+                    funEngine.games.requestStart(kind)
+                }
+                addView(TextView(context).apply {
+                    text = kind.emoji
+                    gravity = Gravity.CENTER
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
+                })
+                addView(TextView(context).apply {
+                    text = kind.label
+                    gravity = Gravity.CENTER
+                    setTextColor(android.graphics.Color.WHITE)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                    maxLines = 1
+                })
+            }
+            gameOptions.addView(item, android.widget.GridLayout.LayoutParams().apply {
+                width = size
+                height = size
+                setMargins(dp(5), dp(5), dp(5), dp(5))
+            })
+        }
     }
 
     private fun hide(view: View) {
@@ -410,6 +468,7 @@ class MainActivity : ComponentActivity() {
         const val PREF_MUTED = "sound_muted"
         const val NOBODY_HINT_DELAY_MS = 1500L
         const val AUTO_CLOSE_MS = 5000L
+        const val GAME_MENU_CLOSE_MS = 10_000L
         val LOOK_NAMES = mapOf(
             Look.NEON to "💡 Neon",
             Look.RAINBOW to "🌈 Rainbow",

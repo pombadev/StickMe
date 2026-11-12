@@ -10,25 +10,62 @@ import kotlin.math.exp
 import kotlin.math.min
 import kotlin.math.sin
 
-enum class Sound { POP, BOING, YAY, TICK, GO, TADA, MISS, WIN }
+/** Sound effects, plus two music loops ([DANCE_LOOP], [MUSIC_BOX_LOOP]) played with [SoundBoard.startLoop]. */
+enum class Sound { POP, BOING, YAY, TICK, GO, TADA, MISS, WIN, DING, FREEZE, DANCE_LOOP, MUSIC_BOX_LOOP }
 
 /**
- * Cartoon sound effects, made with maths when the app starts, so there are no sound files to ship.
- * Safe to call [play] from any thread.
+ * Cartoon sound effects and music, made with maths when the app starts, so there are no sound files to ship.
+ * Safe to call from any thread.
  */
 class SoundBoard : AutoCloseable {
 
+    /** Muting also stops any music loop that is playing. */
     @Volatile var muted = false
+        set(value) {
+            field = value
+            if (value) stopLoop()
+        }
 
     private val tracks = EnumMap<Sound, AudioTrack>(Sound::class.java)
+    private val lengths = EnumMap<Sound, Int>(Sound::class.java)
+    private var loop: AudioTrack? = null
 
     init {
         for (sound in Sound.entries) {
             try {
-                tracks[sound] = staticTrack(synthesize(sound))
+                val samples = synthesize(sound)
+                tracks[sound] = staticTrack(samples)
+                lengths[sound] = samples.size
             } catch (e: Exception) {
                 Log.w("SoundBoard", "Could not prepare $sound", e)
             }
+        }
+    }
+
+    /** Plays [sound] over and over until [stopLoop]; replaces any other loop. */
+    @Synchronized
+    fun startLoop(sound: Sound) {
+        stopLoop()
+        if (muted) return
+        val track = tracks[sound] ?: return
+        try {
+            track.reloadStaticData()
+            track.setLoopPoints(0, lengths.getValue(sound), -1)
+            track.play()
+            loop = track
+        } catch (e: IllegalStateException) {
+            Log.w("SoundBoard", "Could not loop $sound", e)
+        }
+    }
+
+    @Synchronized
+    fun stopLoop() {
+        val playing = loop ?: return
+        loop = null
+        try {
+            playing.stop()
+        } catch (e: IllegalStateException) {
+            Log.w("SoundBoard", "Could not stop the music", e)
         }
     }
 
@@ -81,6 +118,13 @@ class SoundBoard : AutoCloseable {
         const val C6 = 1046.5f
         const val E6 = 1318.5f
         const val G6 = 1568.0f
+        const val D5 = 587.33f
+        const val A5 = 880.0f
+        const val B5 = 987.77f
+        const val D6 = 1174.66f
+        const val F6 = 1396.91f
+        const val A6 = 1760.0f
+        const val C7 = 2093.0f
 
         fun synthesize(sound: Sound): ShortArray = when (sound) {
             Sound.POP -> render(0.12f) { t, _ -> (noise() * 0.5f + wave(900f - 3000f * t, t)) * exp(-30f * t) }
@@ -100,6 +144,49 @@ class SoundBoard : AutoCloseable {
                 freq to exp(-3.5f * t)
             }
             Sound.MISS -> sweep(0.45f) { t -> (500f - 550f * t) to exp(-4f * t) }
+            Sound.DING -> render(0.4f) { t, _ -> bell(1760f, t) * exp(-8f * t) }
+            Sound.FREEZE -> sweep(0.35f) { t -> (900f - 2200f * t) to exp(-2f * t) }
+            Sound.DANCE_LOOP -> danceLoop()
+            Sound.MUSIC_BOX_LOOP -> musicBox()
+        }
+
+        /** Two bars of a bouncy beat at 120 beats a minute: kick, hi-hat, bass and a plucky tune. */
+        private fun danceLoop(): ShortArray {
+            val beat = 0.5f
+            val bass = floatArrayOf(65.4f, 65.4f, 98f, 110f, 87.3f, 87.3f, 98f, 98f)
+            val tune = floatArrayOf(C5, E5, G5, A5, G5, E5, D5, E5, C5, E5, G5, C6, A5, G5, E5, D5)
+            return render(4f) { t, _ ->
+                val b = (t / beat).toInt().coerceAtMost(bass.size - 1)
+                val tb = t - b * beat
+                val kick = sin(2 * PI.toFloat() * (50f + 70f * exp(-30f * tb)) * tb) * exp(-12f * tb)
+                val offBeat = tb - beat / 2
+                val hat = if (offBeat >= 0) noise() * exp(-60f * offBeat) * 0.25f else 0f
+                val bassNote = (wave(bass[b], t) + 0.3f * wave(bass[b] * 3, t)) * 0.35f * exp(-3f * tb)
+                val n = (t / 0.25f).toInt().coerceAtMost(tune.size - 1)
+                val tn = t - n * 0.25f
+                val lead = bell(tune[n], tn) * exp(-7f * tn) * 0.35f
+                (kick * 0.8f + hat + bassNote + lead) / 1.6f
+            }
+        }
+
+        /** A gentle waltz of high, tinkly notes, like a jewellery-box ballerina. */
+        private fun musicBox(): ShortArray {
+            val notes = floatArrayOf(
+                G5, C6, E6, G6, E6, C6, A5, C6, F6, A6, F6, C6,
+                G5, B5, D6, G6, F6, D6, C6, E6, G6, C7, G6, E6,
+            )
+            val step = 0.3f
+            return render(notes.size * step) { t, _ ->
+                var sum = 0f
+                for (i in notes.indices) {
+                    val start = i * step
+                    if (t < start) break
+                    val tn = t - start
+                    sum += (wave(notes[i], tn) + 0.4f * wave(notes[i] * 2, tn) + 0.15f * wave(notes[i] * 3, tn)) *
+                        exp(-2.5f * tn)
+                }
+                sum / 3f
+            }
         }
 
         private fun noise() = (Math.random() * 2 - 1).toFloat()
