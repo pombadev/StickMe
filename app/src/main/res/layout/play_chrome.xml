@@ -147,6 +147,35 @@
         android:textSize="18sp"
         android:visibility="gone" />
 
+    <!-- Shown from the first camera picture until someone is found, so the board never looks empty. -->
+    <LinearLayout
+        android:id="@+id/looking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/Chalk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:rotation="-2"
+            android:text="looking for a friend"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/lookingDots"
+            style="@style/Chalk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="•"
+            android:textColor="@color/yellow"
+            android:textSize="34sp" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/hint"
         style="@style/Chalk"

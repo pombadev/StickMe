@@ -48,6 +48,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var cameraPicture: PreviewView
     private lateinit var skeletons: SkeletonView
     private lateinit var nobody: View
+    private lateinit var looking: View
+    private lateinit var lookingDots: TextView
     private lateinit var logo: View
     private lateinit var friendsText: TextView
     private lateinit var tipNote: View
@@ -96,11 +98,12 @@ class MainActivity : ComponentActivity() {
     @Volatile private var firstFrameSeen = false
     private var framesSinceReport = 0
     private var lastReportAt = SystemClock.elapsedRealtime()
-    private var lastPersonSeenAt = SystemClock.elapsedRealtime()
+    private var lastPersonSeenAt = 0L
     private var tipStartedAt = 0L
     private var shownPeople = -1
     private var shownTip = false
     private var shownNobody = false
+    private var shownLooking: Boolean? = null
     private var shownKey: Any? = null
 
     private val askForCamera = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -153,6 +156,7 @@ class MainActivity : ComponentActivity() {
         })
         setUpScreen()
         startVoice()
+        ticker.post(animateLooking)
         getSystemService(DisplayManager::class.java).registerDisplayListener(displayListener, null)
         loadModel(savedModel())
         if (hasPermission(Manifest.permission.CAMERA)) startCamera() else showCameraAsk()
@@ -173,6 +177,8 @@ class MainActivity : ComponentActivity() {
         skeletons = findViewById(R.id.skeletons)
         skeletons.settings = settings
         nobody = findViewById(R.id.nobody)
+        looking = findViewById(R.id.looking)
+        lookingDots = findViewById(R.id.lookingDots)
         logo = findViewById(R.id.logo)
         friendsText = findViewById(R.id.friendsText)
         tipNote = findViewById(R.id.tipNote)
@@ -274,6 +280,7 @@ class MainActivity : ComponentActivity() {
         shownPeople = -1
         shownTip = false
         shownNobody = false
+        shownLooking = null
     }
 
     private fun goBack() {
@@ -412,6 +419,7 @@ class MainActivity : ComponentActivity() {
     private fun updateChrome(people: Int, game: GameScene?, now: Long) {
         if (!firstFrameSeen) {
             firstFrameSeen = true
+            lastPersonSeenAt = now // the search starts now, not when the app was opened
             runOnUiThread { wakeScreen.animate().alpha(0f).setDuration(250).withEndAction { wakeScreen.visibility = View.GONE; wakeScreen.alpha = 1f }.start() }
         }
         if (people > 0) lastPersonSeenAt = now
@@ -421,10 +429,12 @@ class MainActivity : ComponentActivity() {
         val tip = people > 0 && !gameOn && now - tipStartedAt < TIP_MS
         val friends = if (gameOn) 0 else people
 
-        if (friends != shownPeople || tip != shownTip || nobodyHere != shownNobody) {
+        val searching = people == 0 && !gameOn
+        if (friends != shownPeople || tip != shownTip || nobodyHere != shownNobody || searching != shownLooking) {
             shownPeople = friends
             shownTip = tip
             shownNobody = nobodyHere
+            shownLooking = searching
             runOnUiThread { refreshNotes() }
         }
 
@@ -445,6 +455,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private var gameOn = false
+    private var dotStep = 0
+
+    /** Three dots that fill up one by one while the app is looking for someone. */
+    private val animateLooking = object : Runnable {
+        override fun run() {
+            if (looking.visibility == View.VISIBLE) {
+                dotStep = (dotStep + 1) % 4
+                lookingDots.text = "•  ".repeat(dotStep.coerceAtLeast(1)).trim()
+            }
+            ticker.postDelayed(this, 450)
+        }
+    }
 
     /** The dock, logo and corner stickers belong to the play screen: the crayon sheet and games replace them. */
     private fun applyChrome() {
@@ -464,6 +486,7 @@ class MainActivity : ComponentActivity() {
         friendsText.text = if (friends == 1) "1 friend here!" else "$friends friends here!"
         tipNote.visibility = if (shownTip && !covered) View.VISIBLE else View.GONE
         nobody.visibility = if (shownNobody && !covered) View.VISIBLE else View.GONE
+        looking.visibility = if (shownLooking == true && !shownNobody && !covered) View.VISIBLE else View.GONE
     }
 
     /** Swaps the dock for the game controls (and back), and shows the results screen. */
@@ -605,6 +628,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         getSystemService(DisplayManager::class.java).unregisterDisplayListener(displayListener)
+        ticker.removeCallbacks(animateLooking)
         voice?.shutdown()
         voice = null
         worker.execute {

@@ -108,4 +108,24 @@ class StartupScreensTest {
             drawResults("R_not_best", ResultInfo(GameKind.JUMPS, 7, "jumps", newBest = false, previousBest = 15))
         }
     }
+
+    /** The real play screen while the app is still looking for someone. */
+    @Test
+    fun drawsTheLookingForAFriendState() {
+        Fonts.init(context)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val themed = android.view.ContextThemeWrapper(context, R.style.Theme_StickMe)
+            val host = android.widget.FrameLayout(themed)
+            host.background = ChalkboardDrawable()
+            android.view.LayoutInflater.from(themed).inflate(R.layout.activity_main, host, true)
+            host.findViewById<View>(R.id.wakeScreen).visibility = View.GONE
+            host.findViewById<View>(R.id.looking).visibility = View.VISIBLE
+            host.findViewById<android.widget.TextView>(R.id.lookingDots).text = "•  •"
+            host.measure(View.MeasureSpec.makeMeasureSpec(780, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1688, View.MeasureSpec.EXACTLY))
+            host.layout(0, 0, 780, 1688)
+            val picture = Bitmap.createBitmap(780, 1688, Bitmap.Config.ARGB_8888)
+            host.draw(Canvas(picture))
+            save("L_looking", picture)
+        }
+    }
 }
