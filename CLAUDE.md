@@ -15,14 +15,14 @@ Remote: https://github.com/pombadev/StickMe (public). Licence: Apache 2.0.
 ```sh
 ./gradlew assembleDebug assembleDebugAndroidTest   # build app + tests
 ./gradlew connectedDebugAndroidTest                # run device tests (uninstalls the app afterwards)
-./gradlew assembleRelease                          # test APK, signed with the debug key
+./gradlew assembleRelease                          # test APK, signed with the debug key unless the release key is given (below)
 ```
 
 To keep files a test writes (pictures under `getExternalFilesDir`), install both APKs and run
 `adb shell am instrument -w [-e class app.stickme.kids.GamesTest] app.stickme.kids.test/androidx.test.runner.AndroidJUnitRunner`,
 then `adb pull /sdcard/Android/data/app.stickme.kids/files/...`.
 
-Releases: pushing a tag like `v0.15` runs `.github/workflows/release.yml`, which builds the release APK and attaches `StickMe-<tag>.apk` to a GitHub release. Every action in a workflow must be pinned to a full commit hash (with the version in a comment).
+Releases: pushing a tag like `v0.15` runs `.github/workflows/release.yml`, which builds the release APK and attaches `StickMe-<tag>.apk` to a GitHub release. The release key is `~/.stickme-signing/stickme-release.jks` (alias `stickme`, password in `passwords.txt` next to it); GitHub secrets `STICKME_KEYSTORE_BASE64` and `STICKME_KEYSTORE_PASSWORD` hold a copy. To sign locally set `STICKME_KEYSTORE_FILE` and `STICKME_KEYSTORE_PASSWORD`. Never commit the key. Every action in a workflow must be pinned to a full commit hash (with the version in a comment).
 
 Emulator: AVD `Medium_Phone`. Its camera has no people, so check pose behaviour with device tests, not the live camera.
 

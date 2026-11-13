@@ -17,10 +17,24 @@ android {
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
+    // The real release key is given through the environment (by the release workflow, or by hand);
+    // without it release builds fall back to the debug key so local builds keep working.
+    val releaseKeystore = System.getenv("STICKME_KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("STICKME_KEYSTORE_PASSWORD")
+                keyAlias = "stickme"
+                keyPassword = System.getenv("STICKME_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
