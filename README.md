@@ -6,28 +6,37 @@ Built with [RTMPose](https://github.com/open-mmlab/mmpose/tree/main/projects/rtm
 
 ## What kids can do
 
-- **Glowing stick figures** for up to 4 people at once, with faces and fingers
-- **Looks** (🎨): Neon, Rainbow, Sparkle trails, Echo ghosts, Ballerina (tutu, tiara, ribbons and music-box music)
-- **Faces** (🙂): drawn faces whose mouth and eyes follow the person, lots of emoji faces, and 🎲 to roll random ones
+- **Glowing chalk stick figures** for up to 4 people at once, with faces and fingers, drawn on a chalkboard. While the app is still looking for someone it says "looking for a friend".
+- **Look** (crayon box): Neon, Rainbow, Sparkle trails, Echo ghosts, Ballerina (tutu, tiara, ribbons and music-box music)
+- **Face**: drawn faces whose mouth and eyes follow the person, lots of emoji faces, and a dice button to roll random ones
 - **Magic moves**: hands up → confetti, clap → fireworks, jump → stars
-- **Record** (⏺): saves a video of what's on screen to the Gallery (Movies/StickMe)
-- **Games** (🎯):
+- **Record**: saves a video of what's on screen to the Gallery (Movies/StickMe)
+- **Camera**: switch between the front and back camera
+- **Games**: peel a sticker off the games sheet to play. Every game first asks you to step back until your head, hands and feet (whatever the game needs) are in view, then counts down 3-2-1. When it ends, a results screen stays until you pick "Play again" or another game.
 
 | Game | How it plays |
 |---|---|
-| 🎯 Copy me | Copy the pose in the picture and hold it |
-| 🫧 Bubbles | Pop floating bubbles with your hands |
-| 🧊 Freeze dance | Dance; when the music stops, freeze |
-| 🦘 Jumps | Jump as many times as you can in 30 seconds |
-| ☄️ Meteors | Dodge falling meteors |
-| 🎋 Limbo | Duck under a bar that gets lower each level |
-| 🪞 Mirror me | Two players: one poses, the other copies |
-| 🗣️ Simon says | Only move when Simon says (uses the phone's voice) |
-| 🖌️ Air paint | Draw in the air with a finger; clap to clear |
-| 🏋️ Workout | 5 exercises, every move counted |
-| 🩰 Ballet class | Copy ballet positions and hold them gracefully |
+| Copy me | Copy the pose in the picture and hold it |
+| Bubbles | Pop floating bubbles with your hands |
+| Freeze dance | Dance; when the music stops, freeze |
+| Jumps | Jump as many times as you can in 30 seconds |
+| Meteors | Dodge falling meteors |
+| Limbo | Duck under a bar that gets lower each level |
+| Mirror me | Two players: one poses, the other copies |
+| Simon says | Only move when Simon says (uses the phone's voice) |
+| Air paint | Draw in the air with a finger; clap to clear |
+| Workout | 5 exercises, every move counted |
+| Ballet class | Copy ballet positions and hold them gracefully |
 
-Grown-up settings (⚙️): fast or detailed tracking, sounds on or off.
+**Who plays:** solo games (Copy me, Limbo, Simon says, Air paint, Workout, Ballet class) with two or more people in view ask everyone to raise their hands; whoever keeps them up while the yellow line fills is the player, and the others watch. Freeze dance, Jumps, Bubbles and Meteors let everyone play at once, and Mirror me needs two people.
+
+## For grown-ups
+
+Hold the lock button for 2 seconds to open the grown-ups folder:
+
+- **Tracking**: Fast (default) or Detailed
+- **Sounds and music**: on or off
+- **Screen**: follow the phone, stay upright, or stay sideways
 
 ## Privacy
 
@@ -59,6 +68,10 @@ They check the model output against a Python reference, play every game with mad
 4. Points are smoothed between frames, then effects, faces and games are drawn on top.
 
 Models run with [ONNX Runtime](https://onnxruntime.ai/) on the CPU. The app is large (about 150 MB) mostly because it carries both pose models.
+
+## Look and feel
+
+The "paper and chalk" design: a chalkboard with paper cards, tape and sticker buttons. It uses two fonts bundled in the app, [Bagel Fat One](https://fonts.google.com/specimen/Bagel+Fat+One) and [Gochi Hand](https://fonts.google.com/specimen/Gochi+Hand), both under the SIL Open Font License (copies in `licenses/`).
 
 ## Models and credits
 
