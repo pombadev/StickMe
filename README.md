@@ -1,5 +1,7 @@
 # Stick Me!
 
+> **Archived (13 November 2026).** Development has moved to a private makektm monorepo. This repository stays as a read-only copy of the code up to that date, under the Apache License 2.0.
+
 A fun Android app for kids: point the camera at someone and they turn into a glowing stick figure, live. Everything runs on the phone, with no internet needed.
 
 Built with [RTMPose](https://github.com/open-mmlab/mmpose/tree/main/projects/rtmpose), which finds people and places 133 points on each one (body, feet, face and hands).
