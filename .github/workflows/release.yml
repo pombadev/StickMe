@@ -1,0 +1,38 @@
+name: Release APK
+
+# Builds the app and attaches StickMe-<tag>.apk to a GitHub release whenever a tag like v1.0 is pushed.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # needed to create the release
+    steps:
+      # Every action is pinned to a full commit hash; the comment names the version it matches.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Build the release APK
+        run: ./gradlew assembleRelease
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "StickMe-${TAG}.apk"
+          gh release create "$TAG" "StickMe-${TAG}.apk" --title "Stick Me! ${TAG}" --generate-notes --verify-tag

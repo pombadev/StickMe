@@ -22,6 +22,8 @@ To keep files a test writes (pictures under `getExternalFilesDir`), install both
 `adb shell am instrument -w [-e class app.stickme.kids.GamesTest] app.stickme.kids.test/androidx.test.runner.AndroidJUnitRunner`,
 then `adb pull /sdcard/Android/data/app.stickme.kids/files/...`.
 
+Releases: pushing a tag like `v0.15` runs `.github/workflows/release.yml`, which builds the release APK and attaches `StickMe-<tag>.apk` to a GitHub release. Every action in a workflow must be pinned to a full commit hash (with the version in a comment).
+
 Emulator: AVD `Medium_Phone`. Its camera has no people, so check pose behaviour with device tests, not the live camera.
 
 ## Code map (`app/src/main/java/app/stickme/kids`)
