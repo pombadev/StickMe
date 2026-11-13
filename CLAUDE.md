@@ -26,16 +26,28 @@ Emulator: AVD `Medium_Phone`. Its camera has no people, so check pose behaviour 
 
 ## Code map (`app/src/main/java/app/stickme/kids`)
 
-- `MainActivity` — camera, buttons, menus, recording, music and voice. Frames are analysed on one `worker` thread.
+- `MainActivity` — camera, dock buttons, recording, music and voice, the "looking for a friend" / "Where are you?" notes. Frames are analysed on one `worker` thread.
 - `PoseEngine` — detector + pose model; `PoseModel` lists the two pose models (tiny = default, medium).
 - `PoseSmoother` — smoothing and stable person ids between frames.
 - `ScenePainter` / `SkeletonView` — drawing; `Skeleton` — the 133-point layout and colours.
 - `Effects.kt` — `Body` (pose questions), `FunEngine` (move reactions, sparkles, echoes, runs games), particles.
-- `Games.kt` — `GameKind`, `MiniGame` base (countdown → play → results), `GameHost`, `GameTools`. One file per game.
+- `Games.kt` — `GameKind`, `MiniGame` base (get ready → countdown → play → results that stay until chosen), `GameHost`. One file per game.
+- `Gate.kt` — `GameGate`, the get-ready stage: "Step back!" body check (`Part` head/hands/feet), and for solo games with 2+ people the hands-up player pick. Solo games set `solo = true`; Mirror me sets `needPeople = 2`.
+- `GameTools.kt` — what games draw with: the paper `Card` (tally score, pencil timer, checks) and cut-out `BigText`.
+- `Paper.kt` — the paper-and-chalk palette, `Fonts`, `Chalkboard` background, `StickMeApp`. `PaperViews.kt` — the custom views (sticker buttons, tape, ribbon, crayon box, chalk art, paper cards).
+- `Sheets.kt` — games sheet, looks sheet, grown-ups folder (`SettingsFolder`, `TurnMode` screen-turn setting), results screen, 2 s lock hold.
 - `Moves.kt` — shared detectors (jump, clap, movement speed). `Poses.kt` / `Ballet.kt` / `Workout.kt` — pose checks and pictures.
 - `Faces.kt`, `SoundBoard.kt` (sounds and music made in code), `VideoRecorder.kt`.
 
+## Look and feel
+
+The "paper and chalk" design (a claude.ai artifact, 20 boards) is implemented in code and layouts: `res/layout` (`activity_main`, `play_chrome`, `game_controls`, `overlays`) plus `res/layout-land` for sideways. Fonts Bagel Fat One and Gochi Hand are in `res/font` (SIL OFL, licences in `licenses/`). Icons are vector drawables from the design's path data.
+
 ## Things that are easy to get wrong
+
+- Android ignores `layout_width`/`layout_height` set in a style: put sizes on the views. Use `clipToPadding=false` where a raised sticker would be clipped.
+- Start-up and game screens are checked by `StartupScreensTest`, `GateTest` and `GamesTest`, which save pictures under `getExternalFilesDir`; look at them when changing a layout.
+- The emulator is slow (about 3-8 fps, 8 s to start), so timing seen live there is not real timing.
 
 - Camera-thread state must reach the screen and the recorder as frozen snapshots (`SceneFrame`, `FunSnapshot`, `GameScene`); both draw at the same time, so each drawing thread gets its own painter.
 - Image coordinates are the upright camera picture; map to the screen only through `ImageFit` (it handles cropping and front-camera mirroring).
