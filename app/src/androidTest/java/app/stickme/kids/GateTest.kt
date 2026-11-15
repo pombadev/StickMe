@@ -45,6 +45,36 @@ class GateTest {
     }
 
     @Test
+    fun blurryAnklesStillCountWhenTheToesAreSeen() {
+        // Ankles barely seen, but toes and heels clear: the kid is in view.
+        val toes = pose(17 to (212f to 535f), 19 to (220f to 528f), 20 to (268f to 535f), 22 to (260f to 528f))
+        toes.scores[Body.LEFT_ANKLE] = 0.1f
+        toes.scores[Body.RIGHT_ANKLE] = 0.1f
+        fx.games.requestStart(GameKind.JUMPS)
+        var guard = 0
+        while (fx.games.activeGame?.isPlaying != true && guard++ < 100) step(toes)
+        assertTrue(fx.games.activeGame!!.isPlaying)
+    }
+
+    @Test
+    fun aHeadNearTheTopOfThePictureIsStillInView() {
+        val tall = standing(lift = 70f) // head at y = 70 of 640
+        fx.games.requestStart(GameKind.BUBBLES)
+        var guard = 0
+        while (fx.games.activeGame?.isPlaying != true && guard++ < 100) step(tall)
+        assertTrue(fx.games.activeGame!!.isPlaying)
+    }
+
+    @Test
+    fun aMissedFrameNowAndThenDoesNotRestartTheWait() {
+        fx.games.requestStart(GameKind.JUMPS)
+        var guard = 0
+        // Every fourth frame the feet drop out, as they do with real, flickering points.
+        while (fx.games.activeGame?.isPlaying != true && guard++ < 100) step(if (guard % 4 == 0) feetOutOfView else standing())
+        assertTrue(fx.games.activeGame!!.isPlaying)
+    }
+
+    @Test
     fun gamesThatOnlyNeedHandsAndHeadIgnoreTheFeet() {
         fx.games.requestStart(GameKind.BUBBLES)
         var guard = 0

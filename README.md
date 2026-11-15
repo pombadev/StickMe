@@ -13,7 +13,7 @@ Built with [RTMPose](https://github.com/open-mmlab/mmpose/tree/main/projects/rtm
 - **Face**: drawn faces whose mouth and eyes follow the person, lots of emoji faces, and a dice button to roll random ones
 - **Magic moves**: hands up → confetti, clap → fireworks, jump → stars
 - **Record**: saves a video of what's on screen to the Gallery (Movies/StickMe)
-- **Camera**: switch between the front and back camera
+- **Camera**: starts on the front camera (so kids can see themselves); switch to the back camera any time
 - **Games**: peel a sticker off the games sheet to play. Every game first asks you to step back until your head, hands and feet (whatever the game needs) are in view, then counts down 3-2-1. When it ends, a results screen stays until you pick "Play again" or another game.
 
 | Game | How it plays |

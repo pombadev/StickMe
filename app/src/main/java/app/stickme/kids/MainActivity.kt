@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
     /** The phone's voice, for Simon Says. Null until the speech engine is ready. */
     @Volatile private var voice: TextToSpeech? = null
 
-    private var useFrontCamera = false
+    private var useFrontCamera = true // kids play facing the phone
     @Volatile private var cameraVisible = false
     private var analysis: ImageAnalysis? = null
     private var askedForRecordingPermissions = false
@@ -362,6 +362,9 @@ class MainActivity : ComponentActivity() {
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .apply { cameraPicture.display?.let { setTargetRotation(it.rotation) } }
                 .build()
+            if (useFrontCamera && runCatching { provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) }.getOrDefault(false).not()) {
+                useFrontCamera = false // no front camera on this device
+            }
             val mirrored = useFrontCamera
             newAnalysis.setAnalyzer(worker) { frame -> analyze(frame, mirrored) }
 

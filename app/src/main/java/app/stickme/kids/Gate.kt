@@ -14,15 +14,23 @@ enum class Part(val label: String) {
     }
 }
 
-/** True when [part] of this body is seen clearly and inside [frame] (image pixels). */
+/**
+ * True when [part] of this body is seen and inside [frame] (image pixels). Kept forgiving on purpose,
+ * so kids who are in view are not told to step back: a lower confidence than elsewhere is enough,
+ * and any point of the head, or of each hand or foot, will do (an ankle is often blurry or hidden
+ * while the toes and heel are seen).
+ */
 fun Body.sees(part: Part, frame: RectF): Boolean {
-    fun inside(k: Int) = ok(k) && x(k) in frame.left..frame.right && y(k) in frame.top..frame.bottom
+    fun inside(k: Int) = person.scores[k] > SEEN_SCORE && x(k) in frame.left..frame.right && y(k) in frame.top..frame.bottom
+    fun any(vararg points: Int) = points.any(::inside)
     return when (part) {
-        Part.HEAD -> inside(0)
-        Part.HANDS -> inside(Body.LEFT_WRIST) && inside(Body.RIGHT_WRIST)
-        Part.FEET -> inside(Body.LEFT_ANKLE) && inside(Body.RIGHT_ANKLE)
+        Part.HEAD -> any(0, 1, 2, 3, 4)
+        Part.HANDS -> any(Body.LEFT_WRIST, 91, 99, 103) && any(Body.RIGHT_WRIST, 112, 120, 124)
+        Part.FEET -> any(Body.LEFT_ANKLE, 17, 18, 19) && any(Body.RIGHT_ANKLE, 20, 21, 22)
     }
 }
+
+private const val SEEN_SCORE = 0.2f
 
 /**
  * The "get ready" stage of every game: someone must be fully in view ("Step back!") before the countdown
@@ -34,6 +42,7 @@ class GameGate(
     private val needPeople: Int,
 ) {
     private var fitSince = 0L
+    private var lastFitAt = 0L
     private var waitingSince = -1L
     private var skipped = false
     private var canSkip = false
@@ -57,22 +66,23 @@ class GameGate(
         val enough = bodies.count { b -> needs.all { b.sees(it, frame) } } >= needPeople
         if (enough) {
             if (fitSince == 0L) fitSince = t.now
-        } else {
-            fitSince = 0L
+            lastFitAt = t.now
+        } else if (t.now - lastFitAt > DROPOUT_MS) {
+            fitSince = 0L // a frame or two of missed points does not start the wait again
         }
         return skipped || (fitSince != 0L && t.now - fitSince >= FIT_HOLD_MS)
     }
 
-    /** The part of the picture everyone must fit into: not behind the card at the top, not at the very edge. */
+    /** The part of the picture everyone must fit into: just in from the edges, where points get unreliable. */
     private fun frameFor(visible: RectF): RectF {
         val w = visible.width()
         val h = visible.height()
         val portrait = h >= w
         return RectF(
-            visible.left + w * 0.06f,
-            visible.top + h * (if (portrait) 0.20f else 0.08f),
-            visible.right - w * 0.06f,
-            visible.bottom - h * 0.04f,
+            visible.left + w * 0.03f,
+            visible.top + h * (if (portrait) 0.08f else 0.04f),
+            visible.right - w * 0.03f,
+            visible.bottom - h * 0.02f,
         )
     }
 
@@ -121,6 +131,7 @@ class GameGate(
 
     private companion object {
         const val FIT_HOLD_MS = 1000L
+        const val DROPOUT_MS = 500L
         const val SKIP_AFTER_MS = 15_000L
     }
 }
