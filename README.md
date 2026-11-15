@@ -30,7 +30,7 @@ Built with [RTMPose](https://github.com/open-mmlab/mmpose/tree/main/projects/rtm
 | Workout | 5 exercises, every move counted |
 | Ballet class | Copy ballet positions and hold them gracefully |
 
-**Who plays:** solo games (Copy me, Limbo, Simon says, Air paint, Workout, Ballet class) with two or more people in view ask everyone to raise their hands; whoever keeps them up while the yellow line fills is the player, and the others watch. Freeze dance, Jumps, Bubbles and Meteors let everyone play at once, and Mirror me needs two people.
+**Who plays:** everyone in view plays together, and when any one of them does the move it counts (in Limbo the level counts while at least one head stays under the bar). Mirror me needs two people.
 
 ## For grown-ups
 

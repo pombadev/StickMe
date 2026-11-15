@@ -7,7 +7,6 @@ package app.stickme.kids
 class SimonSays(kit: GameKit) : MiniGame(kit, GameKind.SIMON) {
 
     override val howToPlay = "Only move when Simon says!"
-    override val solo = true
     override val scoreUnit = "right"
 
     private var round = 0

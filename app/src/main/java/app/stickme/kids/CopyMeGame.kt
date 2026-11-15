@@ -4,7 +4,6 @@ package app.stickme.kids
 class CopyMeGame(kit: GameKit) : MiniGame(kit, GameKind.COPY_ME) {
 
     override val howToPlay = "Copy the poses!"
-    override val solo = true
     override val scoreUnit = "poses"
 
     private val poses = PoseTarget.entries.shuffled(kit.random)

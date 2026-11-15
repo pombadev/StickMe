@@ -72,15 +72,6 @@
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/gateHint"
-                style="@style/Chalk"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="wrong person? swap places and try again"
-                android:textColor="@color/chalk_dim"
-                android:textSize="18sp" />
-
-            <TextView
                 android:id="@+id/playAnyway"
                 style="@style/Chalk"
                 android:layout_width="wrap_content"

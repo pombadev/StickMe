@@ -108,7 +108,6 @@ enum class Exercise(val title: String, val emoji: String, val picture: Pictogram
 class Workout(kit: GameKit) : MiniGame(kit, GameKind.WORKOUT) {
 
     override val howToPlay = "5 exercises, 30 seconds each. Let's move!"
-    override val solo = true
     override val scoreUnit = "moves"
 
     private class Label(val x: Float, val y: Float, val count: Int, val size: Float)

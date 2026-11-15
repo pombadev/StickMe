@@ -7,7 +7,6 @@ import app.stickme.kids.TestPoses.standing
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,59 +72,37 @@ class GateTest {
     }
 
     @Test
-    fun aSoloGameWithTwoPeopleLetsWhoeverRaisesTheirHandsPlay() {
-        fx.games.requestStart(GameKind.SIMON)
-        val watching = step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f)).game!!
-        assertEquals(SceneMode.PICK, watching.mode)
-        assertEquals("Hands up to start!", watching.card?.title)
+    fun withTwoPeopleEveryGameStartsWithoutPickingAPlayer() {
+        for (kind in GameKind.entries) {
+            fx.games.requestStart(kind)
+            var guard = 0
+            while (fx.games.activeGame?.isPlaying != true && guard++ < 150) step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f))
+            assertTrue("$kind should start with two people in view", fx.games.activeGame!!.isPlaying)
+            fx.games.requestStop()
+            step()
+        }
+    }
 
-        repeat(12) { step(standing(id = 1, shift = 80f), handsUp(2, -140f)) } // not long enough yet
-        assertEquals(SceneMode.PICK, step(standing(id = 1, shift = 80f), handsUp(2, -140f)).game!!.mode)
-        repeat(8) { step(standing(id = 1, shift = 80f), handsUp(2, -140f)) }
-
+    @Test
+    fun whenOnlyOneOfTwoPeopleStaysUnderTheLimboBarItStillCounts() {
+        fx.games.requestStart(GameKind.LIMBO)
         var guard = 0
         while (fx.games.activeGame?.isPlaying != true && guard++ < 150) step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f))
-        val game = fx.games.activeGame as SimonSays
-        assertTrue(game.isPlaying)
-        assertEquals(2, game.playerId)
+        val game = fx.games.activeGame as Limbo
+        repeat(3) { step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f)) }
+        // Person 1 keeps standing tall; person 2 crouches low enough for two levels.
+        repeat(250) { step(standing(id = 1, shift = 80f), standing(id = 2, lift = -120f, shift = -140f)) }
+        assertEquals(2, game.score)
     }
 
     @Test
-    fun raisingHandsAndLoweringThemAgainDoesNotPickAnyone() {
-        fx.games.requestStart(GameKind.SIMON)
-        repeat(8) { step(standing(id = 1, shift = 80f), handsUp(2, -140f)) }
-        repeat(30) { step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f)) }
-        assertEquals(SceneMode.PICK, step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f)).game!!.mode)
-    }
-
-    @Test
-    fun aGroupGameWithTwoPeopleStartsWithoutPickingAnyone() {
-        fx.games.requestStart(GameKind.FREEZE)
-        var guard = 0
-        var sawPick = false
-        while (fx.games.activeGame?.isPlaying != true && guard++ < 150) {
-            sawPick = sawPick || step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f)).game?.mode == SceneMode.PICK
-        }
-        assertFalse(sawPick)
-        assertTrue(fx.games.activeGame!!.isPlaying)
-        assertNull((fx.games.activeGame as MiniGame).playerId)
-    }
-
-    @Test
-    fun inASoloGameOnlyThePersonWhoClaimedItCounts() {
+    fun anyoneInViewCanAirPaint() {
         fx.games.requestStart(GameKind.PAINT)
-        // Person 1 stands in the picture; person 2 raises their hands and is picked.
-        repeat(22) { step(standing(id = 1, shift = 80f), handsUp(2, -140f)) }
         var guard = 0
         while (fx.games.activeGame?.isPlaying != true && guard++ < 150) step(standing(id = 1, shift = 80f), standing(id = 2, shift = -140f))
         val game = fx.games.activeGame as AirPainting
-
-        repeat(10) { i -> // the watcher waves a finger around
+        repeat(10) { i -> // only person 1 paints
             step(pose(Body.RIGHT_INDEX_TIP to (330f + i * 8f to 200f), Body.RIGHT_WRIST to (320f to 230f), id = 1, shift = 80f), standing(id = 2, shift = -140f))
-        }
-        assertEquals(0, game.paintedPoints)
-        repeat(10) { i -> // the player paints
-            step(standing(id = 1, shift = 80f), pose(Body.RIGHT_INDEX_TIP to (130f + i * 8f to 200f), Body.RIGHT_WRIST to (120f to 230f), id = 2, shift = -140f))
         }
         assertTrue(game.paintedPoints >= 8)
     }

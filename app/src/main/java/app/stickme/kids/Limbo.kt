@@ -4,12 +4,12 @@ import android.graphics.Color
 
 /**
  * A glowing bar comes down; everyone ducks so their head stays under it. Each level the bar
- * stops lower. One head above the bar ends the game. 6 levels.
+ * stops lower. The level counts while at least one person stays under; when every head is
+ * above the bar, the game ends. 6 levels.
  */
 class Limbo(kit: GameKit) : MiniGame(kit, GameKind.LIMBO) {
 
     override val howToPlay = "Duck under the bar!"
-    override val solo = true
     override val scoreUnit = "levels"
 
     private enum class Phase { LOWERING, HOLD, CHEER, OUT }
@@ -43,9 +43,11 @@ class Limbo(kit: GameKit) : MiniGame(kit, GameKind.LIMBO) {
                 show("Stay low!", t.now, Color.WHITE)
             }
             Phase.HOLD -> {
-                val bonked = t.bodies.firstOrNull { body -> body.headY?.let { it < barTo } == true }
-                if (bonked != null) {
-                    bonked.aboveHead(0.2f)?.let { (x, y) -> t.fx.burst(x, y, 0.3f * bonked.unit, t.now, Color.YELLOW) }
+                val heads = t.bodies.filter { it.headY != null }
+                if (heads.isNotEmpty() && heads.all { it.headY!! < barTo }) {
+                    for (bonked in heads) {
+                        bonked.aboveHead(0.2f)?.let { (x, y) -> t.fx.burst(x, y, 0.3f * bonked.unit, t.now, Color.YELLOW) }
+                    }
                     show("Bonk! 😵", t.now, ORANGE)
                     kit.sounds.play(Sound.MISS)
                     endRound(t.now)

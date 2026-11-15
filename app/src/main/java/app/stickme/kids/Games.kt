@@ -62,7 +62,7 @@ class Tick(
 }
 
 /** What the screen is showing, so the buttons around it can change to match. */
-enum class SceneMode { FIT, PICK, PLAY, RESULT }
+enum class SceneMode { FIT, PLAY, RESULT }
 
 /** How a finished game went, for the results screen. */
 class ResultInfo(val kind: GameKind, val score: Int, val unit: String, val newBest: Boolean, val previousBest: Int)
@@ -94,8 +94,9 @@ class GameScene(
 }
 
 /**
- * Shared flow for every game: get ready (stand in view, and for solo games raise your hands to claim it),
- * a 3-2-1 countdown, play, then a results screen that stays until the kid chooses what next.
+ * Shared flow for every game: get ready (stand in view), a 3-2-1 countdown, play, then a results screen
+ * that stays until the kid chooses what next. Everyone in view plays together: when any one of them
+ * does the move, it counts.
  * Games fill in [play] and [playScene]. Camera thread only.
  */
 abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
@@ -106,7 +107,6 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
     private var stageStart = -1L
     private var countdownShown = 0
     private var result: ResultInfo? = null
-    private var lastPlayerAt: Pair<Float, Float>? = null
 
     protected var big: BigText? = null
     var score = 0
@@ -114,9 +114,6 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
 
     /** One short sentence shown during the countdown. */
     protected abstract val howToPlay: String
-
-    /** Solo games are played by one person, picked by raising hands when several people are in view. */
-    open val solo = false
 
     /** Which parts of the body must be in view before the game starts. */
     open val needs: Set<Part> = Part.ALL
@@ -127,11 +124,7 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
     /** What the score counts, for the results screen. */
     open val scoreUnit = "points"
 
-    /** The person playing a solo game, once picked. */
-    var playerId: Int? = null
-        private set
-
-    private val gate by lazy { GameGate(kit, kind.label, solo, needs, needPeople) }
+    private val gate by lazy { GameGate(kind.label, needs, needPeople) }
 
     internal val isPlaying get() = stage == Stage.PLAY
 
@@ -150,7 +143,6 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
         if (stageStart < 0) stageStart = t.now
         when (stage) {
             Stage.GATE -> if (gate.update(t)) {
-                playerId = gate.player
                 stage = Stage.COUNTDOWN
                 stageStart = t.now
             }
@@ -161,38 +153,17 @@ abstract class MiniGame(protected val kit: GameKit, val kind: GameKind) {
                     stageStart = t.now
                     show("GO!", t.now, Color.WHITE)
                     kit.sounds.play(Sound.GO)
-                    onStart(playersOnly(t))
+                    onStart(t)
                 } else if (left != countdownShown) {
                     countdownShown = left
                     show(left.toString(), t.now, YELLOW)
                     kit.sounds.play(Sound.TICK)
                 }
             }
-            Stage.PLAY -> if (!play(playersOnly(t))) finish(t)
+            Stage.PLAY -> if (!play(t)) finish(t)
             Stage.RESULT, Stage.DONE -> Unit
         }
         return stage != Stage.DONE
-    }
-
-    /** In a solo game only the person who claimed it counts; everyone else is watching. */
-    private fun playersOnly(t: Tick): Tick {
-        val id = playerId
-        if (!solo || id == null) return t
-        var mine = t.bodies.filter { it.person.id == id }
-        if (mine.isEmpty() && t.bodies.isNotEmpty()) {
-            // The tracker may have given the same person a new number: pick up whoever is where they were.
-            val last = lastPlayerAt
-            val near = last?.let { (x, y) ->
-                t.bodies.minByOrNull { Math.hypot((it.person.box.centerX() - x).toDouble(), (it.person.box.centerY() - y).toDouble()) }
-                    ?.takeIf { Math.hypot((it.person.box.centerX() - x).toDouble(), (it.person.box.centerY() - y).toDouble()) < t.imageWidth * 0.35 }
-            }
-            if (near != null) {
-                playerId = near.person.id
-                mine = listOf(near)
-            }
-        }
-        mine.firstOrNull()?.let { lastPlayerAt = it.person.box.centerX() to it.person.box.centerY() }
-        return t.withBodies(mine)
     }
 
     fun scene(now: Long): GameScene = when (stage) {

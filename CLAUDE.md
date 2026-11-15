@@ -34,7 +34,7 @@ Emulator: AVD `Medium_Phone`. Its camera has no people, so check pose behaviour 
 - `ScenePainter` / `SkeletonView` — drawing; `Skeleton` — the 133-point layout and colours.
 - `Effects.kt` — `Body` (pose questions), `FunEngine` (move reactions, sparkles, echoes, runs games), particles.
 - `Games.kt` — `GameKind`, `MiniGame` base (get ready → countdown → play → results that stay until chosen), `GameHost`. One file per game.
-- `Gate.kt` — `GameGate`, the get-ready stage: "Step back!" body check (`Part` head/hands/feet), and for solo games with 2+ people the hands-up player pick. Solo games set `solo = true`; Mirror me sets `needPeople = 2`.
+- `Gate.kt` — `GameGate`, the get-ready stage: "Step back!" body check (`Part` head/hands/feet). There is no player pick: everyone in view plays and any one person doing the move scores. Mirror me sets `needPeople = 2`.
 - `GameTools.kt` — what games draw with: the paper `Card` (tally score, pencil timer, checks) and cut-out `BigText`.
 - `Paper.kt` — the paper-and-chalk palette, `Fonts`, `Chalkboard` background, `StickMeApp`. `PaperViews.kt` — the custom views (sticker buttons, tape, ribbon, crayon box, chalk art, paper cards).
 - `Sheets.kt` — games sheet, looks sheet, grown-ups folder (`SettingsFolder`, `TurnMode` screen-turn setting), results screen, 2 s lock hold.

@@ -88,7 +88,6 @@ class SpinDetector {
 class BalletClass(kit: GameKit) : MiniGame(kit, GameKind.BALLET) {
 
     override val howToPlay = "Copy the ballet pose and hold it gracefully!"
-    override val solo = true
     override val scoreUnit = "stars"
 
     private val poses = BalletPose.entries.shuffled(kit.random) + BalletPose.entries.shuffled(kit.random).take(2)

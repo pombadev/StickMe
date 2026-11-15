@@ -11,7 +11,6 @@ import kotlin.math.hypot
 class AirPainting(kit: GameKit) : MiniGame(kit, GameKind.PAINT) {
 
     override val howToPlay = "Draw with your finger! Clap to clear."
-    override val solo = true
     override val needs = Part.UPPER
     override val scoreUnit = "points"
 

@@ -63,7 +63,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var gameControls: View
     private lateinit var gameHint: TextView
     private lateinit var gateLinks: View
-    private lateinit var gateHint: View
     private lateinit var playAnyway: View
     private lateinit var stopGame: View
     private lateinit var recordMini: View
@@ -192,7 +191,6 @@ class MainActivity : ComponentActivity() {
         gameControls = findViewById(R.id.gameControls)
         gameHint = findViewById(R.id.gameHint)
         gateLinks = findViewById(R.id.gateLinks)
-        gateHint = findViewById(R.id.gateHint)
         playAnyway = findViewById(R.id.playAnyway)
         stopGame = findViewById(R.id.stopGame)
         recordMini = findViewById(R.id.recordMini)
@@ -501,8 +499,7 @@ class MainActivity : ComponentActivity() {
         recordMini.visibility = if (inPlay) View.VISIBLE else View.GONE
         gameHint.visibility = if (inPlay) View.VISIBLE else View.GONE
         gameHint.text = game?.hint.orEmpty()
-        gateLinks.visibility = if (mode == SceneMode.FIT || mode == SceneMode.PICK) View.VISIBLE else View.GONE
-        gateHint.visibility = if (mode == SceneMode.PICK) View.VISIBLE else View.GONE
+        gateLinks.visibility = if (mode == SceneMode.FIT) View.VISIBLE else View.GONE
         playAnyway.visibility = if (mode == SceneMode.FIT && game?.canSkip == true) View.VISIBLE else View.GONE
         val info = game?.result
         if (mode == SceneMode.RESULT && info != null) results.show(info) else results.hide()

@@ -14,7 +14,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import kotlin.random.Random
 
-/** Saves pictures of the start-up screens (waking up, step back, hands up to start) for a person to look at. */
+/** Saves pictures of the start-up screens (waking up, step back, results) for a person to look at. */
 @RunWith(AndroidJUnit4::class)
 class StartupScreensTest {
 
@@ -69,17 +69,6 @@ class StartupScreensTest {
         val scene = step(feetOut)
         assertEquals(SceneMode.FIT, scene.game?.mode)
         draw("D_step_back", scene, listOf(feetOut))
-    }
-
-    @Test
-    fun drawsHandsUpToStart() {
-        val watcher = standing(id = 1, shift = 70f)
-        val raised = pose(9 to (215f to 60f), 10 to (265f to 60f), id = 2, shift = -70f)
-        fx.games.requestStart(GameKind.SIMON)
-        var scene = step(watcher, raised)
-        repeat(8) { scene = step(watcher, raised) } // the yellow line is part-way full
-        assertEquals(SceneMode.PICK, scene.game?.mode)
-        draw("E_hands_up", scene, listOf(watcher, raised))
     }
 
     /** Draws the real results layout at phone size. */
