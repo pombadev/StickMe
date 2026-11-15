@@ -56,6 +56,7 @@ class GameTools(val effects: EffectsPainter) {
         val left = if (landscape) 22f * u else 18f * u
         val top = if (landscape) 26f * u else 58f * u
         val pad = 18f * u
+        val right = left + width
 
         // Work out the card's height from what is on it.
         var y = top + 22f * u
@@ -63,13 +64,22 @@ class GameTools(val effects: EffectsPainter) {
         if (info.kicker.isNotEmpty()) y += 20f * u
         val titleY = y + 27f * u
         y += 34f * u
+        // A pose to copy gets a row of its own under the title: a big picture, readable from across the
+        // room, with the subtitle and timer beside it.
+        val picture = info.picture
+        val pictureSize = if (picture == null) 0f else (if (landscape) 120f else 150f) * u
+        val pictureTop = y + 8f * u
+        val besideLeft = left + pad + pictureSize + (if (picture == null) 0f else 16f * u)
+        val subtitleLines = if (info.subtitle.isEmpty()) emptyList() else wrap(info.subtitle, Fonts.hand, 20f * u, right - pad - besideLeft)
+        val beside = subtitleLines.size * 24f * u + (if (info.timeLeft != null) 48f * u else 0f)
+        if (picture != null) y = pictureTop + (pictureSize - beside) / 2
         val subtitleY = y + 16f * u
-        if (info.subtitle.isNotEmpty()) y += 24f * u
+        y += subtitleLines.size * 24f * u
         val timerY = y + 32f * u
         if (info.timeLeft != null) y += 48f * u
+        if (picture != null) y = max(y, pictureTop + pictureSize)
         val checksHeight = info.checks?.let { 22f * u + it.size * 30f * u } ?: 0f
         val bottom = max(y + 12f * u, top + checksHeight)
-        val right = left + width
 
         canvas.save()
         canvas.rotate(-1.5f, left + width / 2, (top + bottom) / 2)
@@ -98,13 +108,10 @@ class GameTools(val effects: EffectsPainter) {
         canvas.restore()
 
         // Right side: score tally, a checklist, or a short corner text.
-        var textLeft = left + pad
+        val textLeft = left + pad
         var textRight = right - pad
-        val picture = info.picture
         if (picture != null) {
-            val size = 52f * u
-            drawPictogram(canvas, picture, left + pad, titleY - 34f * u, size, if (info.highlight) Paper.GREEN_OK else Paper.INK)
-            textLeft += size + 12f * u
+            drawPictogram(canvas, picture, left + pad, pictureTop, pictureSize, if (info.highlight) Paper.GREEN_OK else Paper.INK, bold = true)
         }
 
         info.tally?.let { textRight -= drawScore(canvas, info.tally, info.unit, right - pad, top + 20f * u, u) + 10f * u }
@@ -122,11 +129,25 @@ class GameTools(val effects: EffectsPainter) {
             fitText(canvas, info.kicker, Fonts.hand, 19f * u, Paper.INK_BROWN, textLeft, kickerY, textRight - textLeft)
         }
         fitText(canvas, info.title, Fonts.heading, 30f * u, Paper.INK, textLeft, titleY, textRight - textLeft)
-        if (info.subtitle.isNotEmpty()) {
-            fitText(canvas, info.subtitle, Fonts.hand, 20f * u, Paper.INK_BROWN, textLeft, subtitleY, right - pad - textLeft)
+        subtitleLines.forEachIndexed { i, line ->
+            fitText(canvas, line, Fonts.hand, 20f * u, Paper.INK_BROWN, besideLeft, subtitleY + i * 24f * u, right - pad - besideLeft)
         }
-        info.timeLeft?.let { drawPencilTimer(canvas, it, left + pad, right - pad, timerY, u) }
+        info.timeLeft?.let { drawPencilTimer(canvas, it, besideLeft, right - pad, timerY, u) }
         canvas.restore()
+    }
+
+    /** Splits [text] into at most two lines that fit [room] (a second line only when one doesn't fit). */
+    private fun wrap(text: String, font: android.graphics.Typeface, size: Float, room: Float): List<String> {
+        label.typeface = font
+        label.textSize = size
+        if (label.measureText(text) <= room) return listOf(text)
+        val words = text.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (words.size < 2) return listOf(text)
+        // Break where the two lines come out most even.
+        val split = (1 until words.size).minBy { k ->
+            max(label.measureText(words.take(k).joinToString(" ")), label.measureText(words.drop(k).joinToString(" ")))
+        }
+        return listOf(words.take(split).joinToString(" "), words.drop(split).joinToString(" "))
     }
 
     private fun fitText(canvas: Canvas, text: String, font: android.graphics.Typeface, size: Float, color: Int, x: Float, y: Float, room: Float) {
@@ -297,10 +318,11 @@ class GameTools(val effects: EffectsPainter) {
         c.canvas.restore()
     }
 
-    fun drawPictogram(canvas: Canvas, picture: Pictogram, left: Float, top: Float, size: Float, color: Int) {
+    /** A stick-figure picture in a [size] square. [bold] uses thicker lines, for pictures seen from far away. */
+    fun drawPictogram(canvas: Canvas, picture: Pictogram, left: Float, top: Float, size: Float, color: Int, bold: Boolean = false) {
         val unit = size / 100f
         stroke.color = color
-        stroke.strokeWidth = 7f * unit
+        stroke.strokeWidth = (if (bold) 10f else 7f) * unit
         for (line in picture.lines) {
             for (i in 0 until line.size - 2 step 2) {
                 canvas.drawLine(
@@ -310,7 +332,7 @@ class GameTools(val effects: EffectsPainter) {
             }
         }
         fill.color = color
-        canvas.drawCircle(left + picture.headX * unit, top + picture.headY * unit, 8f * unit, fill)
+        canvas.drawCircle(left + picture.headX * unit, top + picture.headY * unit, (if (bold) 10f else 8f) * unit, fill)
     }
 
     private companion object {
